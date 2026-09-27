@@ -1,0 +1,104 @@
+name: Deploy RamoVerde design demos
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Validate and deploy demo gallery
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate demo gallery
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          root = Path("evidences/demo-design-sistem")
+          expected = [
+              "design-01-professional",
+              "design-02-technical",
+              "design-03-editorial",
+              "design-04-institutional",
+              "design-05-field-operations",
+              "design-06-modern-landscaping",
+              "design-07-green-grid",
+              "design-08-local-trust",
+              "design-09-infrastructure",
+              "design-10-conversion-first",
+          ]
+
+          class References(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = set()
+                  self.refs = []
+
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  if attrs.get("id"):
+                      self.ids.add(attrs["id"])
+                  ref_attr = "src" if tag in {"script", "img", "iframe"} else "href"
+                  if tag in {"a", "link", "script", "img", "iframe"} and attrs.get(ref_attr):
+                      self.refs.append((tag, attrs[ref_attr]))
+
+          if not (root / "index.html").is_file() or not (root / "README.md").is_file():
+              raise SystemExit("Comparative index or README is missing")
+          actual = sorted(p.name for p in root.iterdir() if p.is_dir())
+          if actual != sorted(expected):
+              raise SystemExit(f"Expected exactly the 10 demo directories; found: {actual}")
+
+          pages = [root / "index.html"]
+          pages.extend(root / name / "index.html" for name in expected)
+          for page in pages:
+              if not page.is_file():
+                  raise SystemExit(f"Missing page: {page}")
+              parser = References()
+              parser.feed(page.read_text(encoding="utf-8"))
+              for tag, ref in parser.refs:
+                  parts = urlsplit(ref)
+                  if tag in {"link", "script", "img", "iframe"} and parts.scheme in {"http", "https"}:
+                      raise SystemExit(f"External asset in {page}: {ref}")
+                  if parts.scheme or parts.netloc or ref.startswith(("mailto:", "tel:", "data:", "javascript:")):
+                      continue
+                  if not parts.path and parts.fragment:
+                      if parts.fragment not in parser.ids:
+                          raise SystemExit(f"Broken anchor in {page}: #{parts.fragment}")
+                      continue
+                  if parts.path:
+                      target = (page.parent / parts.path).resolve()
+                      if not target.is_file():
+                          raise SystemExit(f"Broken local reference in {page}: {ref}")
+
+          print("PASS: 10 demo pages, comparative index, README, and local references validated.")
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: evidences/demo-design-sistem
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
