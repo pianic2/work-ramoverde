@@ -68,6 +68,16 @@ jobs:
 
           pages = [root / "index.html"]
           pages.extend(root / name / "index.html" for name in expected)
+          external_assets = {
+              "img": {"images.unsplash.com", "images.pexels.com"},
+              "link": {
+                  "fonts.googleapis.com",
+                  "fonts.gstatic.com",
+                  "images.unsplash.com",
+                  "images.pexels.com",
+              },
+          }
+          asset_tags = {"link", "script", "img", "iframe"}
           for page in pages:
               if not page.is_file():
                   raise SystemExit(f"Missing page: {page}")
@@ -75,8 +85,13 @@ jobs:
               parser.feed(page.read_text(encoding="utf-8"))
               for tag, ref in parser.refs:
                   parts = urlsplit(ref)
-                  if tag in {"link", "script", "img", "iframe"} and parts.scheme in {"http", "https"}:
-                      raise SystemExit(f"External asset in {page}: {ref}")
+                  if tag in asset_tags and (parts.scheme in {"http", "https"} or parts.netloc):
+                      host = (parts.hostname or "").lower()
+                      if parts.scheme not in {"", "https"}:
+                          raise SystemExit(f"Non-HTTPS external asset in {page}: {ref}")
+                      if host not in external_assets.get(tag, set()):
+                          raise SystemExit(f"Unapproved external asset in {page}: {ref}")
+                      continue
                   if parts.scheme or parts.netloc or ref.startswith(("mailto:", "tel:", "data:", "javascript:")):
                       continue
                   if not parts.path and parts.fragment:
