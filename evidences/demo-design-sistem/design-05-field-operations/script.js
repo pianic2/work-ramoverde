@@ -1,38 +1,24 @@
 const menuButton = document.querySelector('.menu-toggle');
-const primaryNav = document.querySelector('#primary-nav');
+const navigation = document.querySelector('#nav');
 
 menuButton?.addEventListener('click', () => {
-  const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
-  menuButton.setAttribute('aria-expanded', String(!isOpen));
-  menuButton.querySelector('.visually-hidden').textContent = isOpen ? 'Apri il menu' : 'Chiudi il menu';
-  primaryNav.classList.toggle('is-open', !isOpen);
+  const open = menuButton.getAttribute('aria-expanded') === 'true';
+  menuButton.setAttribute('aria-expanded', String(!open));
+  menuButton.setAttribute('aria-label', open ? 'Apri menu' : 'Chiudi menu');
+  navigation?.classList.toggle('is-open', !open);
 });
 
-primaryNav?.querySelectorAll('a').forEach((link) => {
+navigation?.querySelectorAll('a').forEach((link) => {
   link.addEventListener('click', () => {
-    primaryNav.classList.remove('is-open');
+    navigation.classList.remove('is-open');
     menuButton?.setAttribute('aria-expanded', 'false');
-    const label = menuButton?.querySelector('.visually-hidden');
-    if (label) label.textContent = 'Apri il menu';
+    menuButton?.setAttribute('aria-label', 'Apri menu');
   });
 });
 
-const attachmentInput = document.querySelector('#attachments');
-const uploadTitle = document.querySelector('.upload-control b');
-const uploadDescription = document.querySelector('.upload-control small');
-attachmentInput?.addEventListener('change', () => {
-  if (attachmentInput.files.length) {
-    uploadTitle.textContent = `${attachmentInput.files.length} file selezionat${attachmentInput.files.length === 1 ? 'o' : 'i'}`;
-    uploadDescription.textContent = 'Anteprima locale: i file non vengono caricati.';
-  } else {
-    uploadTitle.textContent = 'Aggiungi foto o video';
-    uploadDescription.textContent = 'Elemento dimostrativo, nessun file viene caricato';
-  }
-});
-
-document.querySelector('#request-form')?.addEventListener('submit', (event) => {
+document.querySelector('#contact-form')?.addEventListener('submit', (event) => {
   event.preventDefault();
-  const feedback = document.querySelector('#form-feedback');
-  feedback.textContent = 'Demo interattiva: nessun dato è stato inviato o memorizzato.';
-  feedback.classList.add('is-active');
+  const status = document.querySelector('.form-status');
+  status.textContent = 'Richiesta dimostrativa pronta. Nessun dato è stato trasmesso o salvato.';
+  status.classList.add('is-active');
 });

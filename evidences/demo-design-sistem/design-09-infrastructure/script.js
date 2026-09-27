@@ -1,42 +1,39 @@
 (() => {
-  const menuButton = document.querySelector('.menu-toggle');
+  const button = document.querySelector('.menu-toggle');
   const nav = document.querySelector('#primary-nav');
-  const status = document.querySelector('#form-status');
-  const fileInput = document.querySelector('#media');
-  const fileName = document.querySelector('#file-name');
+  const label = button?.querySelector('.sr-only');
 
-  if (menuButton && nav) {
-    menuButton.addEventListener('click', () => {
-      const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
-      menuButton.setAttribute('aria-expanded', String(!isOpen));
-      menuButton.querySelector('.sr-only').textContent = isOpen ? 'Apri navigazione' : 'Chiudi navigazione';
-      nav.classList.toggle('is-open', !isOpen);
-    });
-    nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
-      menuButton.setAttribute('aria-expanded', 'false');
-      menuButton.querySelector('.sr-only').textContent = 'Apri navigazione';
-      nav.classList.remove('is-open');
-    }));
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && nav.classList.contains('is-open')) {
-        nav.classList.remove('is-open');
-        menuButton.setAttribute('aria-expanded', 'false');
-        menuButton.querySelector('.sr-only').textContent = 'Apri navigazione';
-        menuButton.focus();
-      }
-    });
-  }
+  const closeMenu = (returnFocus = false) => {
+    button?.setAttribute('aria-expanded', 'false');
+    if (label) label.textContent = 'Apri navigazione';
+    nav?.classList.remove('is-open');
+    if (returnFocus) button?.focus();
+  };
 
-  if (fileInput && fileName) {
-    fileInput.addEventListener('change', () => {
-      const count = fileInput.files?.length || 0;
-      fileName.textContent = count ? `${count} file selezionat${count === 1 ? 'o' : 'i'} — anteprima dimostrativa, nessun invio.` : '';
-    });
-  }
-
-  document.querySelector('#request-form')?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!event.currentTarget.reportValidity()) return;
-    status.textContent = 'Dimostrazione completata: nessun dato è stato inviato o salvato.';
+  button?.addEventListener('click', () => {
+    const opening = button.getAttribute('aria-expanded') !== 'true';
+    button.setAttribute('aria-expanded', String(opening));
+    if (label) label.textContent = opening ? 'Chiudi navigazione' : 'Apri navigazione';
+    nav?.classList.toggle('is-open', opening);
   });
+
+  nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => closeMenu()));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && nav?.classList.contains('is-open')) closeMenu(true);
+  });
+
+  const revealItems = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const observer = new IntersectionObserver((entries, currentObserver) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          currentObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -35px 0px' });
+    revealItems.forEach((item) => observer.observe(item));
+  } else {
+    revealItems.forEach((item) => item.classList.add('is-visible'));
+  }
 })();

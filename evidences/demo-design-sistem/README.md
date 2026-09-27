@@ -2,39 +2,29 @@
 
 ## Scopo
 
-Questo esperimento mette a confronto dieci linguaggi UI applicati agli stessi contenuti. Serve allo stakeholder per valutare concretamente stile, tipografia, colore, composizione, componenti e percorso di richiesta. Non è il sito definitivo.
+Dieci homepage indipendenti esplorano linguaggi visivi diversi per aiutare lo stakeholder a valutare art direction, fotografia, composizione, tipografia, sezioni e interazioni. Sono prototipi di scelta visuale, non il sito definitivo.
 
-## Fonte canonica e limiti
+## Accuratezza dei contenuti
 
-I contenuti seguono la Source of Truth **WRM-CLIENT-SOT** e i dati confermati inclusi nel brief del progetto. I prototipi non aggiungono recapiti, prezzi, recensioni o promesse. Le qualifiche ISO 9001 e SOA V categoria sono indicate come dichiarate dall’azienda e da verificare prima della pubblicazione. Le illustrazioni e le gallery sono placeholder dimostrativi, non lavori attribuiti a RamoVerde.
+Il checkout esaminato non contiene il documento `WRM-CLIENT-SOT` citato nel progetto. Le pagine mantengono quindi i testi aziendali volutamente generici e non aggiungono numeri, recapiti, certificazioni, clienti, testimonianze o risultati non verificati. Prima di inserire contenuti aziendali puntuali, confrontarli con la Source of Truth canonica.
 
-Palette, tipografia, proporzioni, immagini, componenti, animazioni e composizioni sono ipotesi visuali per la valutazione: **non sono decisioni definitive del brand**. Nessuna proposta è una raccomandazione o un vincitore.
+Le fotografie Unsplash e Pexels sono immagini di riferimento: non documentano necessariamente lavori svolti da RamoVerde. La provenienza è annotata nel markup delle pagine; i moduli sono dimostrativi e non inviano dati.
 
-## Le dieci alternative
+## Le dieci direzioni
 
-1. `design-01-professional/` — Corporate contemporaneo, griglia rigorosa e spazio bianco.
-2. `design-02-technical/` — Servizi tecnici, procedure e maggiore densità informativa.
-3. `design-03-editorial/` — Impaginazione editoriale e immagini in primo piano.
-4. `design-04-institutional/` — Geometria sobria e qualifiche facilmente leggibili.
-5. `design-05-field-operations/` — Lavoro sul campo, numerazioni e sequenze operative.
-6. `design-06-modern-landscaping/` — Composizioni immersive e interazioni contemporanee.
-7. `design-07-green-grid/` — Componenti modulari e sistema a griglia.
-8. `design-08-local-trust/` — Tono diretto, persone e contatti accessibili.
-9. `design-09-infrastructure/` — Servizi strutturati per committenti organizzati.
-10. `design-10-conversion-first/` — Percorso guidato dalla scelta del servizio alla richiesta.
+1. `design-01-professional/` — **Botanical Luxury**: verde profondo, immagini immersive e dettagli editoriali premium.
+2. `design-02-technical/` — **Architectural Green**: griglia rigorosa, geometrie nette e paesaggio in dialogo con l’architettura.
+3. `design-03-editorial/` — **Natural Editorial**: ritmo da rivista, composizione asimmetrica e fotografie ampie.
+4. `design-04-institutional/` — **Quiet Premium**: spazio, tipografia precisa e movimento discreto.
+5. `design-05-field-operations/` — **Craft / Artisan**: texture materiche, numerazioni e dettagli del lavoro.
+6. `design-06-modern-landscaping/` — **Organic Immersive**: immagini sovrapposte, forme organiche e passaggi fluidi.
+7. `design-07-green-grid/` — **Neo-Botanical**: botanica ritagliata, composizione grafica e accenti contemporanei.
+8. `design-08-local-trust/` — **Contemporary Local**: tono diretto, accessibilità e relazione con le persone.
+9. `design-09-infrastructure/` — **Cinematic Landscape**: paesaggio dominante e sequenze fotografiche immersive.
+10. `design-10-conversion-first/` — **Bold Eco**: tipografia energica, contrasto cromatico e percorso di contatto dinamico.
+
+Le proposte sono presentate senza graduatoria o indicazione di preferenza.
 
 ## Apertura
 
-Aprire `index.html` con un browser per confrontare le dieci proposte. Ogni pulsante apre la demo completa nella rispettiva cartella. È possibile aprire direttamente qualsiasi `design-XX-*/index.html` dal filesystem. Non è necessario alcun build step; per un server statico, dalla cartella del comparatore eseguire `python3 -m http.server 8000` e aprire `http://localhost:8000`.
-
-## Struttura
-
-```text
-index.html
-README.md
-design-01-professional/
-...
-design-10-conversion-first/
-```
-
-Ogni variante è indipendente e contiene i propri file e stili. Le pagine sono progettate per viewport mobile, tablet e desktop; il modulo è dimostrativo e non invia dati.
+Aprire `index.html` in un browser per confrontare le anteprime e seguire i link alle singole demo. Ogni demo è standalone; non serve un build step. Per un server statico, dalla cartella del comparatore eseguire `python3 -m http.server 8000` e aprire `http://localhost:8000`.

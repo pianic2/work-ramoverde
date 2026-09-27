@@ -1,29 +1,38 @@
 (() => {
+  document.documentElement.classList.add('js');
+
   const menuButton = document.querySelector('.menu-toggle');
   const nav = document.querySelector('#primary-nav');
   if (menuButton && nav) {
-    menuButton.addEventListener('click', () => {
-      const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
-      menuButton.setAttribute('aria-expanded', String(!isOpen));
-      nav.classList.toggle('is-open', !isOpen);
-    });
-    nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
+    const closeMenu = () => {
       menuButton.setAttribute('aria-expanded', 'false');
+      menuButton.setAttribute('aria-label', 'Apri menu');
       nav.classList.remove('is-open');
-    }));
+    };
+    menuButton.addEventListener('click', () => {
+      const opening = menuButton.getAttribute('aria-expanded') !== 'true';
+      menuButton.setAttribute('aria-expanded', String(opening));
+      menuButton.setAttribute('aria-label', opening ? 'Chiudi menu' : 'Apri menu');
+      nav.classList.toggle('is-open', opening);
+    });
+    nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
+    });
   }
 
-  const fileInput = document.querySelector('#media');
-  const fileList = document.querySelector('#file-list');
-  fileInput?.addEventListener('change', () => {
-    const files = Array.from(fileInput.files || []);
-    fileList.textContent = files.length ? files.map((file) => file.name).join(', ') : 'Nessun file selezionato';
-  });
-
-  document.querySelector('#request-form')?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const response = document.querySelector('#form-response');
-    if (!event.currentTarget.reportValidity()) return;
-    response.textContent = 'Richiesta dimostrativa compilata. Nessun dato è stato inviato.';
-  });
+  const photos = document.querySelectorAll('.photo-reveal');
+  if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const observer = new IntersectionObserver((entries, activeObserver) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          activeObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -35px 0px' });
+    photos.forEach((photo) => observer.observe(photo));
+  } else {
+    photos.forEach((photo) => photo.classList.add('is-visible'));
+  }
 })();

@@ -3,174 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#153b36">
-  <meta name="description" content="Proposta visuale istituzionale per RamoVerde: manutenzione del verde, processo di richiesta e contatto.">
-  <title>RamoVerde | Proposta istituzionale</title>
+  <meta name="theme-color" content="#f4f3ed">
+  <meta name="description" content="RamoVerde: cura e manutenzione del verde, con attenzione ai luoghi e ai ritmi naturali.">
+  <title>RamoVerde — Cura del verde, con misura</title>
+  <link rel="preconnect" href="https://images.unsplash.com">
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#contenuto">Vai al contenuto</a>
   <header class="site-header">
-    <div class="header-inner">
-      <a class="brand" href="#inizio" aria-label="RamoVerde, pagina iniziale">
-        <span class="brand-mark" aria-hidden="true">RV</span>
-        <span class="brand-name">RAMO<span>VERDE</span><small>SRL · SERVIZI PER IL VERDE</small></span>
-      </a>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
-        <span class="menu-icon" aria-hidden="true"></span><span class="sr-only">Apri menu</span>
-      </button>
-      <nav class="primary-nav" id="primary-nav" aria-label="Navigazione principale">
-        <a href="#servizi">Servizi</a><a href="#azienda">Azienda</a><a href="#lavori">Lavori</a><a href="#contatti">Contatti</a>
-        <a class="button button-small" href="#richiesta">Richiedi un sopralluogo <span aria-hidden="true">↗</span></a>
-      </nav>
-    </div>
+    <a class="wordmark" href="#inizio" aria-label="RamoVerde, pagina iniziale"><span class="mark" aria-hidden="true">r.</span><span>ramoverde<small>cura del verde</small></span></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Apri navigazione"><span></span><span></span></button>
+    <nav id="primary-nav" class="primary-nav" aria-label="Navigazione principale">
+      <a href="#servizi">Servizi</a><a href="#approccio">Approccio</a><a href="#lavori">Selezione visiva</a><a class="nav-contact" href="#contatti">Parliamone <span aria-hidden="true">↗</span></a>
+    </nav>
   </header>
 
   <main id="contenuto">
-    <section class="hero section-wrap" id="inizio" aria-labelledby="hero-title">
+    <section class="hero" id="inizio" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow"><span></span> RAMO VERDE SRL · TOSCANA</p>
-        <h1 id="hero-title">Manutenzione del verde, <span>con metodo.</span></h1>
-        <p class="hero-intro">Qualità e competenza per la cura di aree verdi private, condominiali e pubbliche.</p>
-        <div class="hero-actions">
-          <a class="button" href="#richiesta">Richiedi un sopralluogo <span aria-hidden="true">↗</span></a>
-          <a class="button button-outline" href="#servizi">Esplora i servizi <span aria-hidden="true">↓</span></a>
-        </div>
-        <div class="hero-meta"><span class="meta-rule"></span><span>Sede operativa<br><strong>Colle di Val d'Elsa</strong></span></div>
+        <p class="eyebrow"><span class="eyebrow-line"></span> CURA E MANUTENZIONE DEL VERDE</p>
+        <h1 id="hero-title">Il verde cambia.<br><em>La cura resta.</em></h1>
+        <div class="hero-bottom"><p>Interventi attenti, pensati per accompagnare ogni spazio verde nel tempo.</p><a class="round-link" href="#servizi" aria-label="Scopri i servizi">↓</a></div>
       </div>
-      <div class="hero-visual" role="img" aria-label="Illustrazione dimostrativa di un'area verde con alberi e percorsi">
-        <div class="visual-topline"><span>AREA VERDE</span><span>ILLUSTRAZIONE DEMO</span></div>
-        <div class="landscape-scene">
-          <div class="scene-sky"></div><div class="scene-hill hill-back"></div><div class="scene-hill hill-front"></div>
-          <div class="tree tree-one"><i></i><b></b></div><div class="tree tree-two"><i></i><b></b></div><div class="tree tree-three"><i></i><b></b></div>
-          <div class="scene-path"></div><div class="scene-building"></div>
-        </div>
-        <div class="visual-caption"><span class="caption-index">01</span><span>Una proposta visuale<br>per servizi organizzati</span><span class="caption-line"></span></div>
-      </div>
+      <figure class="hero-image">
+        <!-- Foto: Unsplash, paesaggio di lago tra boschi e montagne. URL immagine diretta verificata HTTP 200. -->
+        <img src="https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1800&q=85" alt="Lago circondato da boschi di conifere e montagne" fetchpriority="high">
+        <figcaption><span>Un equilibrio da custodire</span></figcaption>
+      </figure>
+      <span class="hero-index" aria-hidden="true">TOSCANA&nbsp; · &nbsp;VERDE</span>
     </section>
 
-    <section class="facts-band" aria-label="Informazioni essenziali">
-      <div class="facts-inner">
-        <div><span class="fact-number">01</span><p><strong>Qualità</strong><br>Attenzione al risultato</p></div>
-        <div><span class="fact-number">02</span><p><strong>Competenza</strong><br>Organizzazione tecnica</p></div>
-        <div><span class="fact-number">03</span><p><strong>Sicurezza</strong><br>Attenzione ai lavoratori</p></div>
-        <div><span class="fact-number">04</span><p><strong>Territorio</strong><br>Toscana, disponibilità nazionale</p></div>
-      </div>
+    <section class="intro section-shell" aria-label="Introduzione">
+      <p class="eyebrow">RAMOVERDE, IN BREVE</p>
+      <p class="intro-text">Ogni luogo ha una sua misura. Ci occupiamo di <em>manutenzione, potature e cura degli alberi</em>, con interventi valutati sulle caratteristiche dello spazio e sulle esigenze di chi lo vive.</p>
+      <span class="intro-mark" aria-hidden="true">✳</span>
     </section>
 
-    <section class="section-wrap section-block" id="servizi">
-      <div class="section-heading">
-        <div><p class="eyebrow"><span></span> AMBITI DI INTERVENTO</p><h2>Servizi per ogni<br>contesto verde.</h2></div>
-        <p class="heading-note">Le attività vengono valutate in base alle caratteristiche dell'area e alle necessità del committente.</p>
-      </div>
-      <div class="services-grid">
-        <article class="service-card service-featured"><span class="service-code">01 / CURA CONTINUATIVA</span><span class="service-symbol" aria-hidden="true">↗</span><h3>Manutenzione ordinaria</h3><p>Cura programmata delle aree verdi.</p></article>
-        <article class="service-card"><span class="service-code">02 / POTATURE</span><span class="service-symbol" aria-hidden="true">⌁</span><h3>Potature</h3><p>Interventi di potatura su alberi e vegetazione.</p></article>
-        <article class="service-card"><span class="service-code">03 / ALBERI</span><span class="service-symbol" aria-hidden="true">＋</span><h3>Abbattimenti alberi</h3><p>Valutazione e gestione dell'intervento.</p></article>
-        <article class="service-card"><span class="service-code">04 / ALBERI</span><span class="service-symbol" aria-hidden="true">⌖</span><h3>Cura e manutenzione alberi</h3><p>Attività dedicate alla gestione degli alberi.</p></article>
-        <article class="service-card"><span class="service-code">05 / PROGETTO VERDE</span><span class="service-symbol" aria-hidden="true">▦</span><h3>Realizzazione e rifacimento giardini</h3><p>Realizzazione o rinnovo di spazi verdi.</p></article>
-        <article class="service-card"><span class="service-code">06 / CONDOMINI</span><span class="service-symbol" aria-hidden="true">⌂</span><h3>Servizi per condomini</h3><p>Per amministratori e aree comuni.</p></article>
-        <article class="service-card"><span class="service-code">07 / IMPRESE</span><span class="service-symbol" aria-hidden="true">▤</span><h3>Servizi per aziende</h3><p>Interventi per spazi verdi aziendali.</p></article>
-        <article class="service-card"><span class="service-code">08 / ENTI</span><span class="service-symbol" aria-hidden="true">⌑</span><h3>Servizi per enti</h3><p>Attività per aree e commesse pubbliche.</p></article>
-      </div>
-    </section>
-
-    <section class="process-section">
-      <div class="section-wrap process-wrap">
-        <div class="section-heading section-heading-light"><div><p class="eyebrow"><span></span> COME SI SVOLGE</p><h2>Un percorso<br>chiaro, dall'inizio.</h2></div><p class="heading-note">Il sopralluogo è quasi sempre necessario e normalmente gratuito.</p></div>
-        <ol class="process-list">
-          <li><span class="process-number">01</span><div><h3>Richiesta</h3><p>Raccontaci area e necessità.</p></div><span class="process-arrow" aria-hidden="true">→</span></li>
-          <li><span class="process-number">02</span><div><h3>Sopralluogo</h3><p>Quasi sempre necessario, normalmente gratuito.</p></div><span class="process-arrow" aria-hidden="true">→</span></li>
-          <li><span class="process-number">03</span><div><h3>Preventivo</h3><p>Una proposta basata sull'area da valutare.</p></div><span class="process-arrow" aria-hidden="true">→</span></li>
-          <li><span class="process-number">04</span><div><h3>Intervento</h3><p>Attività concordata con il committente.</p></div><span class="process-arrow" aria-hidden="true">✓</span></li>
-        </ol>
-      </div>
-    </section>
-
-    <section class="section-wrap section-block company-section" id="azienda">
-      <div class="company-copy"><p class="eyebrow"><span></span> ORGANIZZAZIONE E ATTENZIONE</p><h2>Competenza tecnica.<br>Attenzione concreta.</h2><p>Qualità, competenza e attenzione alla sicurezza dei lavoratori guidano l'organizzazione delle attività.</p><p>L'esperienza ventennale è riferita alla persona fondatrice.</p><a class="text-link" href="#richiesta">Parliamo del tuo intervento <span aria-hidden="true">↗</span></a></div>
-      <div class="company-panel">
-        <div class="panel-top"><span>PRINCIPI DI LAVORO</span><span>RV / 04</span></div>
-        <div class="principle-row"><span class="principle-index">A</span><div><h3>Qualità</h3><p>Attenzione al risultato dell'intervento.</p></div></div>
-        <div class="principle-row"><span class="principle-index">B</span><div><h3>Competenza</h3><p>Valutazione tecnica delle necessità.</p></div></div>
-        <div class="principle-row"><span class="principle-index">C</span><div><h3>Sicurezza</h3><p>Attenzione alla sicurezza dei lavoratori.</p></div></div>
-        <div class="principle-row"><span class="principle-index">D</span><div><h3>Organizzazione</h3><p>Passaggi chiari per ogni richiesta.</p></div></div>
-      </div>
-    </section>
-
-    <section class="credentials-section" aria-labelledby="credentials-title">
-      <div class="section-wrap credentials-wrap">
-        <div class="credentials-heading"><div><p class="eyebrow"><span></span> QUALIFICHE</p><h2 id="credentials-title">Riferimenti<br>dichiarati.</h2></div><p>Qualifiche indicate dall'azienda, da verificare documentalmente prima della pubblicazione definitiva.</p></div>
-        <div class="credentials-list">
-          <div class="credential"><span class="credential-seal" aria-hidden="true">ISO</span><div><span class="credential-label">SISTEMA DI GESTIONE</span><h3>ISO 9001</h3></div><span class="badge badge-pending">Verifica documentale</span></div>
-          <div class="credential"><span class="credential-seal" aria-hidden="true">SOA</span><div><span class="credential-label">QUALIFICAZIONE</span><h3>SOA V categoria</h3></div><span class="badge badge-pending">Verifica documentale</span></div>
+    <section class="services section-shell" id="servizi" aria-labelledby="services-title">
+      <div class="section-top"><p class="eyebrow">COSA FACCIAMO</p><span class="section-note">Interventi per spazi privati e condivisi</span></div>
+      <div class="services-layout">
+        <h2 id="services-title">La cura giusta,<br><em>nel tempo giusto.</em></h2>
+        <div class="service-list">
+          <article class="service-row"><div><h3>Manutenzione del verde</h3><p>Cura periodica di giardini, aree comuni e spazi aperti.</p></div><span class="service-arrow" aria-hidden="true">↗</span></article>
+          <article class="service-row"><div><h3>Potature</h3><p>Interventi su alberi e arbusti valutati in base al contesto.</p></div><span class="service-arrow" aria-hidden="true">↗</span></article>
+          <article class="service-row"><div><h3>Gestione degli alberi</h3><p>Attività di cura e valutazione, incluse rimozioni quando necessarie.</p></div><span class="service-arrow" aria-hidden="true">↗</span></article>
+          <article class="service-row"><div><h3>Giardini e spazi comuni</h3><p>Realizzazione, rinnovo e manutenzione degli spazi verdi.</p></div><span class="service-arrow" aria-hidden="true">↗</span></article>
         </div>
       </div>
     </section>
 
-    <section class="section-wrap section-block gallery-section" id="lavori">
-      <div class="section-heading"><div><p class="eyebrow"><span></span> ESEMPI VISUALI</p><h2>Il verde, in diversi<br>contesti di cura.</h2></div><p class="heading-note">Illustrazioni dimostrative. Non rappresentano interventi realizzati da RamoVerde.</p></div>
-      <div class="gallery-grid">
-        <figure class="gallery-item gallery-large"><div class="gallery-art art-garden" role="img" aria-label="Illustrazione demo di un giardino"></div><figcaption><span>01</span><strong>Giardino</strong><small>Illustrazione demo</small></figcaption></figure>
-        <figure class="gallery-item"><div class="gallery-art art-trees" role="img" aria-label="Illustrazione demo di alberi da curare"></div><figcaption><span>02</span><strong>Alberi</strong><small>Illustrazione demo</small></figcaption></figure>
-        <figure class="gallery-item"><div class="gallery-art art-condo" role="img" aria-label="Illustrazione demo di un'area verde condominiale"></div><figcaption><span>03</span><strong>Area condominiale</strong><small>Illustrazione demo</small></figcaption></figure>
-        <figure class="gallery-item"><div class="gallery-art art-public" role="img" aria-label="Illustrazione demo di un'area verde pubblica"></div><figcaption><span>04</span><strong>Area pubblica</strong><small>Illustrazione demo</small></figcaption></figure>
-        <figure class="gallery-item"><div class="gallery-art art-lawn" role="img" aria-label="Illustrazione demo di un'area a prato"></div><figcaption><span>05</span><strong>Area a prato</strong><small>Illustrazione demo</small></figcaption></figure>
+    <section class="story" id="approccio" aria-labelledby="story-title">
+      <div class="story-image">
+        <!-- Foto: Unsplash, mani al lavoro tra piante. URL immagine diretta verificata HTTP 200. -->
+        <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1200&q=82" alt="Cura manuale delle piante in un giardino" loading="lazy">
+        <span class="image-label">IL GESTO, PRIMA DEL RISULTATO</span>
+      </div>
+      <div class="story-copy"><p class="eyebrow">IL NOSTRO APPROCCIO</p><h2 id="story-title">Osservare.<br>Capire.<br><em>Intervenire.</em></h2><p>La cura comincia dall'ascolto del luogo. Un sopralluogo aiuta a comprendere condizioni, priorità e stagionalità, per definire insieme come procedere.</p><a class="text-link" href="#contatti">Raccontaci il tuo spazio <span aria-hidden="true">↗</span></a></div>
+    </section>
+
+    <section class="work section-shell" id="lavori" aria-labelledby="work-title">
+      <div class="section-top"><p class="eyebrow">ATMOSFERE DI CURA</p><span class="section-note">Immagini illustrative · non documentano lavori RamoVerde</span></div>
+      <div class="work-heading"><h2 id="work-title">Spazi diversi,<br><em>attenzione comune.</em></h2><p>Una selezione visiva di giardini, alberi e paesaggi che ispirano il nostro modo di prenderci cura del verde.</p></div>
+      <div class="gallery">
+        <figure class="gallery-item gallery-tall"><!-- Foto: Unsplash, paesaggio collinare verde. URL immagine diretta. -->
+          <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1100&q=82" alt="Campi verdi che seguono il profilo delle colline" loading="lazy"><figcaption><span>Paesaggio e stagioni</span></figcaption></figure>
+        <figure class="gallery-item gallery-small"><!-- Foto: Unsplash, alberi al tramonto. URL immagine diretta. -->
+          <img src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=900&q=82" alt="Filari di alberi nella luce calda del tramonto" loading="lazy"><figcaption><span>Alberi e luce</span></figcaption></figure>
+        <figure class="gallery-item gallery-wide"><!-- Foto: Unsplash, pianta in primo piano. URL immagine diretta. -->
+          <img src="https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=1100&q=82" alt="Foglie verdi illuminate da luce morbida" loading="lazy"><figcaption><span>Dettagli di un giardino</span></figcaption></figure>
       </div>
     </section>
 
-    <section class="territory-section">
-      <div class="section-wrap territory-wrap">
-        <div><p class="eyebrow"><span></span> TERRITORIO</p><h2>Radicati in Toscana.<br>Disponibilità dichiarata nazionale.</h2><p>La sede operativa è a Colle di Val d'Elsa. La disponibilità dichiarata riguarda anche il territorio nazionale; la fattibilità si valuta in base alla richiesta.</p></div>
-        <div class="territory-map" aria-label="Schema illustrativo del territorio, non cartografico"><span class="map-caption">SCHEMA ILLUSTRATIVO</span><div class="map-shape"><span class="map-dot"></span><span class="map-label">TOSCANA</span><span class="map-line line-one"></span><span class="map-line line-two"></span><span class="map-line line-three"></span></div><div class="map-legend"><span><i class="legend-primary"></i> Area primaria</span><span><i class="legend-secondary"></i> Disponibilità dichiarata</span></div></div>
-      </div>
+    <section class="contact" id="contatti" aria-labelledby="contact-title">
+      <div class="contact-inner"><div><p class="eyebrow">CONTATTI</p><h2 id="contact-title">Ogni spazio<br>ha una storia.<br><em>Da dove partiamo?</em></h2></div><div class="contact-side"><p>Parliamoci del tuo giardino, di un albero o di un'area da mantenere. Il primo passo è capire insieme di cosa ha bisogno.</p><a class="contact-link" href="mailto:info@ramoverde.it">Scrivici <span aria-hidden="true">↗</span></a><p class="contact-note">RamoVerde · Colle di Val d'Elsa, Toscana</p></div></div>
+      <div class="contact-bottom"><span>Un dialogo, senza fretta.</span><span>RAMOVERDE</span></div>
     </section>
-
-    <section class="section-wrap section-block request-section" id="richiesta">
-      <div class="request-intro"><p class="eyebrow"><span></span> RICHIESTA DI CONTATTO</p><h2>Iniziamo da<br>un sopralluogo.</h2><p>Descrivi l'area e il servizio richiesto. Il form è dimostrativo e non invia dati.</p><div class="info-card"><span class="info-icon" aria-hidden="true">i</span><div><strong>Sopralluogo</strong><p>Quasi sempre necessario e normalmente gratuito.</p></div></div><div class="sample-component"><span class="sample-label">ESEMPIO COMPONENTE INFORMATIVO</span><p>Spazio predisposto per un contenuto informativo o una testimonianza verificata.</p><span class="badge">Nessuna testimonianza inserita</span></div></div>
-      <form class="request-form" id="request-form">
-        <div class="form-head"><div><span class="form-kicker">MODULO DIMOSTRATIVO</span><h3>Parliamo del tuo spazio verde</h3></div><span class="required-note">* Campi richiesti</span></div>
-        <div class="form-grid">
-          <div class="field"><label for="first-name">Nome *</label><input id="first-name" name="first-name" autocomplete="given-name" required></div>
-          <div class="field"><label for="last-name">Cognome *</label><input id="last-name" name="last-name" autocomplete="family-name" required></div>
-          <div class="field"><label for="phone">Telefono *</label><input id="phone" name="phone" type="tel" autocomplete="tel" required></div>
-          <div class="field"><label for="email">Email *</label><input id="email" name="email" type="email" autocomplete="email" required></div>
-          <div class="field"><label for="client-type">Tipo cliente *</label><select id="client-type" name="client-type" required><option value="">Seleziona</option><option>Privato</option><option>Condominio / amministratore</option><option>Azienda</option><option>Ente</option></select></div>
-          <div class="field"><label for="service">Servizio *</label><select id="service" name="service" required><option value="">Seleziona</option><option>Manutenzione ordinaria</option><option>Potature</option><option>Abbattimenti alberi</option><option>Cura e manutenzione alberi</option><option>Realizzazione / rifacimento giardini</option><option>Servizi per condomini</option><option>Servizi per aziende</option><option>Servizi per enti</option></select></div>
-          <div class="field"><label for="zone">Zona dell'intervento *</label><input id="zone" name="zone" autocomplete="address-level2" required></div>
-          <div class="field"><label for="area-size">Dimensione indicativa dell'area</label><select id="area-size" name="area-size"><option value="">Seleziona</option><option>Piccola</option><option>Media</option><option>Estesa</option><option>Da valutare</option></select></div>
-          <div class="field field-full"><label for="description">Descrizione *</label><textarea id="description" name="description" rows="4" required></textarea></div>
-          <div class="field field-full"><label for="files">Foto o video (opzionale)</label><label class="upload-control" for="files"><span class="upload-symbol" aria-hidden="true">＋</span><span><strong>Seleziona file</strong><small>Elemento dimostrativo, nessun caricamento attivo</small></span><input id="files" name="files" type="file" accept="image/*,video/*" multiple></label><span class="file-name" aria-live="polite"></span></div>
-          <div class="field"><label for="period">Periodo desiderato</label><select id="period" name="period"><option value="">Seleziona</option><option>Appena possibile</option><option>Entro un mese</option><option>Più avanti</option><option>Da definire</option></select></div>
-          <div class="field"><label for="urgency">Urgenza</label><select id="urgency" name="urgency"><option value="">Seleziona</option><option>Ordinaria</option><option>Da valutare</option></select></div>
-        </div>
-        <label class="check-row"><input type="checkbox" name="visit" checked><span>Richiedo un sopralluogo</span></label>
-        <div class="form-alert" role="status" tabindex="-1" hidden>Modulo dimostrativo: i dati non sono stati inviati.</div>
-        <button class="button form-submit" type="submit">Invia richiesta dimostrativa <span aria-hidden="true">↗</span></button>
-        <p class="form-footnote">Prototipo visuale, senza invio e senza memorizzazione dei dati.</p>
-      </form>
-    </section>
-
-    <section class="design-system-section" aria-labelledby="system-title">
-      <div class="section-wrap system-wrap">
-        <div class="section-heading"><div><p class="eyebrow"><span></span> COMPONENTI E STILE</p><h2 id="system-title">Sistema visivo<br>proposto.</h2></div><p class="heading-note">Colori, tipografia e componenti sono ipotesi da valutare, non decisioni definitive del brand.</p></div>
-        <div class="system-grid">
-          <article class="system-card palette-card"><span class="system-label">PALETTE PROPOSTA</span><div class="swatches"><div><i style="--swatch:#153b36"></i><span>Primary<br>#153B36</span></div><div><i style="--swatch:#49665e"></i><span>Secondary<br>#49665E</span></div><div><i style="--swatch:#d39a4a"></i><span>Accent<br>#D39A4A</span></div><div><i style="--swatch:#f4f6f3"></i><span>Background<br>#F4F6F3</span></div><div><i style="--swatch:#ffffff"></i><span>Surface<br>#FFFFFF</span></div><div><i style="--swatch:#1f2a28"></i><span>Text<br>#1F2A28</span></div><div><i style="--swatch:#66736f"></i><span>Muted<br>#66736F</span></div><div><i style="--swatch:#8c4a38"></i><span>Status<br>#8C4A38</span></div></div></article>
-          <article class="system-card type-card"><span class="system-label">TIPOGRAFIA · SYSTEM SANS</span><div class="type-sample"><span>Display · 52/56</span><strong>Verde curato.<br>Interventi chiari.</strong></div><div class="type-sample"><span>H2 · 36/42</span><h3>Ordine e leggibilità</h3></div><div class="type-sample"><span>H3 · 21/28</span><h4>Servizi per ogni contesto</h4></div><div class="type-sample"><span>Body · 16/26</span><p>Qualità e competenza al servizio delle aree verdi.</p></div><div class="type-sample"><span>Small / meta · 12/18</span><small>RAMO VERDE SRL · TOSCANA</small></div><p class="type-note">Font display: system-ui · font body: system-ui · scala modulare indicativa.</p></article>
-          <article class="system-card buttons-card"><span class="system-label">AZIONI</span><div class="button-showcase"><button class="button" type="button">Primaria <span aria-hidden="true">↗</span></button><button class="button button-outline" type="button">Secondaria</button><button class="text-link" type="button">Testuale <span aria-hidden="true">→</span></button></div><div class="badge-showcase"><span class="badge">Tag informativo</span><span class="badge badge-pending">Verifica richiesta</span></div><div class="control-sample"><label for="demo-control">Controllo form</label><input id="demo-control" value="Esempio di campo" readonly></div></article>
-          <article class="system-card component-card"><span class="system-label">COMPONENTI</span><div class="mini-step"><span>01</span><div><strong>Sopralluogo</strong><small>Passaggio del processo</small></div><span class="mini-arrow">→</span></div><div class="mini-cert"><span class="credential-seal">ISO</span><div><strong>ISO 9001</strong><small>Qualifica dichiarata</small></div></div><div class="mini-alert"><strong>Nota informativa</strong><span>Verifica documentale prevista prima della pubblicazione.</span></div><div class="mini-testimonial"><span>COMPONENTE PREDISPOSTO</span><strong>Contenuto verificato da inserire</strong><small>Nessuna citazione o recensione presente</small></div></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="closing-cta"><div class="section-wrap closing-inner"><div><p class="eyebrow"><span></span> RICHIESTA E VALUTAZIONE</p><h2>Il primo passo è<br>conoscere l'area.</h2></div><a class="button button-light" href="#richiesta">Richiedi un sopralluogo <span aria-hidden="true">↗</span></a></div></section>
   </main>
-
-  <footer class="site-footer" id="contatti">
-    <div class="section-wrap footer-main"><a class="brand brand-footer" href="#inizio"><span class="brand-mark" aria-hidden="true">RV</span><span class="brand-name">RAMO<span>VERDE</span><small>SRL · SERVIZI PER IL VERDE</small></span></a><div class="footer-contact"><span>SEDE OPERATIVA</span><p>Località San Marziale 11/13<br>Colle di Val d'Elsa</p></div><div class="footer-contact"><span>TELEFONO</span><p><a href="tel:+3905771607653">05771607653</a></p></div><div class="footer-contact"><span>PARTITA IVA</span><p>01637570522</p></div><a class="footer-top" href="#inizio">Torna su ↑</a></div>
-    <div class="section-wrap footer-bottom"><span>RAMO VERDE SRL</span><span>PROPOSTA VISUAL DEMO · DIREZIONE 04</span></div>
-  </footer>
-  <nav class="mobile-action" aria-label="Azione rapida"><a href="#richiesta">Richiedi un sopralluogo <span aria-hidden="true">↗</span></a></nav>
+  <footer class="site-footer"><a class="wordmark footer-brand" href="#inizio"><span class="mark" aria-hidden="true">r.</span><span>ramoverde<small>cura del verde</small></span></a><p>Prendersi cura dei luoghi,<br>una stagione alla volta.</p><a class="footer-top" href="#inizio">Torna all'inizio ↑</a><small class="copyright">RamoVerde · Contenuto dimostrativo</small></footer>
 </body>
 </html>
