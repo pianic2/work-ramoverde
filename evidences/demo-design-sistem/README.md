@@ -10,6 +10,12 @@ Il checkout esaminato non contiene il documento `WRM-CLIENT-SOT` citato nel prog
 
 Le fotografie Unsplash e Pexels sono immagini di riferimento: non documentano necessariamente lavori svolti da RamoVerde. La provenienza è annotata nel markup delle pagine; i moduli sono dimostrativi e non inviano dati.
 
+## Decisione stakeholder — 1 ottobre 2026
+
+**CONFERMATO:** lo stakeholder ha selezionato **Design 09 — Infrastructure / Cinematic Landscape** come direzione visuale di riferimento. La scelta è registrata come evidenza di progetto in `../stakeholder-decisions/2026-10-01-design-09-and-logo-assets.md`.
+
+La demo resta un riferimento di art direction e non va trattata come sito definitivo già approvato nei contenuti o nelle funzionalità.
+
 ## Le dieci direzioni
 
 1. `design-01-professional/` — **Botanical Luxury**: verde profondo, immagini immersive e dettagli editoriali premium.
@@ -23,7 +29,7 @@ Le fotografie Unsplash e Pexels sono immagini di riferimento: non documentano ne
 9. `design-09-infrastructure/` — **Cinematic Landscape**: paesaggio dominante e sequenze fotografiche immersive.
 10. `design-10-conversion-first/` — **Bold Eco**: tipografia energica, contrasto cromatico e percorso di contatto dinamico.
 
-Le proposte sono presentate senza graduatoria o indicazione di preferenza.
+Le dieci proposte erano state predisposte senza graduatoria; la selezione successiva dello stakeholder è Design 09.
 
 ## Apertura
 
