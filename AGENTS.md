@@ -1,5 +1,11 @@
 # Repository guide
 
+## Project: RamoVerde (Jira `WR`, Confluence space `WR`)
+
+- Sources of truth, highest first: `WRM-CLIENT-SOT` (company data) → `UserStory` (functional scope v1.0) → `Stack` (technical baseline v1.0) → Jira issue → this repository. Never invent company data: anything not confirmed in `WRM-CLIENT-SOT` stays `null`/`DA DEFINIRE`.
+- Every issue follows the RamoVerde **Definition of Ready / Definition of Done**: `docs/agents/definition-of-ready-done.md`. Done means correct, valuable, simple, accessible, secure, tested, with fresh evidence and an independent review — not just green gates.
+- Visual direction: Design 09 (`evidences/demo-design-sistem/design-09-infrastructure/`). Product copy is Italian.
+
 ## Architecture and sources of truth
 
 - Django models, serializers, views and `openapi/openapi.yaml` define the backend contract.
@@ -35,10 +41,12 @@
 
 ## Definition of Done
 
-- Acceptance behavior has tests; required lint, typecheck, tests and relevant builds pass.
+The full checklist is `docs/agents/definition-of-ready-done.md` (D1–D14). Minimum technical bar:
+
+- Acceptance behavior has tests (failing test first); required lint, typecheck, tests and relevant builds pass.
 - API changes update schema and generated client; model changes include reviewed migrations.
 - Mobile UI reuses the personal library and passes package resolution, render, Expo doctor and export checks where the environment supports them.
-- `git diff --check` is clean and only scoped files changed.
+- `git diff --check` is clean and only scoped files changed; commits are prefixed with the Jira key (`WR-123: ...`).
 
 ## Subagents
 
