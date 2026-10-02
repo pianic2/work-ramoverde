@@ -175,6 +175,172 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/media/assets:
+    get:
+      operationId: listMediaAssets
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMediaAssetList'
+          description: ''
+    post:
+      operationId: createMediaAsset
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MediaAssetUpload'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+  /api/v1/media/assets/{id}:
+    get:
+      operationId: getMediaAsset
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media asset.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+    patch:
+      operationId: updateMediaAsset
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media asset.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMediaAssetUpdate'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+    delete:
+      operationId: deleteMediaAsset
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media asset.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/media/assets/{id}/download:
+    get:
+      operationId: downloadMediaAsset
+      description: Download the blob as an attachment. Non-public blobs need the download
+        permission.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media asset.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '302':
+          description: Redirect to a short-lived signed URL (S3/R2).
+  /api/v1/public/media-assets:
+    get:
+      operationId: listPublicMediaAssets
+      description: 'Anonymous listing: only PUBLIC + APPROVED assets.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPublicMediaAssetList'
+          description: ''
   /api/v1/users/me:
     get:
       operationId: getUsersMe
@@ -192,6 +358,16 @@ paths:
           description: ''
 components:
   schemas:
+    AuthorizationStatusEnum:
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      type: string
+      description: |-
+        * `PENDING` - Pending review
+        * `APPROVED` - Approved for publication
+        * `REJECTED` - Rejected
     CsrfToken:
       type: object
       properties:
@@ -199,6 +375,116 @@ components:
           type: string
       required:
       - csrfToken
+    MediaAsset:
+      type: object
+      description: 'Staff representation: full metadata, never the blob itself.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        original_filename:
+          type: string
+          readOnly: true
+        mime_type:
+          type: string
+          readOnly: true
+        kind:
+          type: string
+          readOnly: true
+        size:
+          type: integer
+          readOnly: true
+        checksum_sha256:
+          type: string
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+        alt_text:
+          type: string
+          maxLength: 255
+        caption:
+          type: string
+          maxLength: 500
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        origin:
+          $ref: '#/components/schemas/OriginEnum'
+        source_note:
+          type: string
+          description: Author, licence or provenance of the file.
+          maxLength: 255
+        authorization_status:
+          allOf:
+          - $ref: '#/components/schemas/AuthorizationStatusEnum'
+          readOnly: true
+          description: |-
+            Public site usage requires APPROVED (photo publication rules are DA DEFINIRE).
+
+            * `PENDING` - Pending review
+            * `APPROVED` - Approved for publication
+            * `REJECTED` - Rejected
+        public_url:
+          type: string
+          nullable: true
+          readOnly: true
+        uploaded_by_email:
+          type: string
+          format: email
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - authorization_status
+      - checksum_sha256
+      - created_at
+      - height
+      - id
+      - kind
+      - mime_type
+      - original_filename
+      - public_url
+      - size
+      - updated_at
+      - uploaded_by_email
+      - width
+    MediaAssetUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uri
+        alt_text:
+          type: string
+          maxLength: 255
+        caption:
+          type: string
+          maxLength: 500
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityEnum'
+          default: PRIVATE
+        origin:
+          allOf:
+          - $ref: '#/components/schemas/OriginEnum'
+          default: STAFF_UPLOAD
+        source_note:
+          type: string
+          maxLength: 255
+      required:
+      - file
     MobileCredentials:
       type: object
       properties:
@@ -236,6 +522,123 @@ components:
       required:
       - access
       - refresh
+    OriginEnum:
+      enum:
+      - STAFF_UPLOAD
+      - CLIENT_PROVIDED
+      - THIRD_PARTY
+      type: string
+      description: |-
+        * `STAFF_UPLOAD` - Uploaded by staff
+        * `CLIENT_PROVIDED` - Provided by the client
+        * `THIRD_PARTY` - Third party / licensed
+    PaginatedMediaAssetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+    PaginatedPublicMediaAssetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicMediaAsset'
+    PatchedMediaAssetUpdate:
+      type: object
+      properties:
+        alt_text:
+          type: string
+          maxLength: 255
+        caption:
+          type: string
+          maxLength: 500
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        origin:
+          $ref: '#/components/schemas/OriginEnum'
+        source_note:
+          type: string
+          description: Author, licence or provenance of the file.
+          maxLength: 255
+        authorization_status:
+          allOf:
+          - $ref: '#/components/schemas/AuthorizationStatusEnum'
+          description: |-
+            Public site usage requires APPROVED (photo publication rules are DA DEFINIRE).
+
+            * `PENDING` - Pending review
+            * `APPROVED` - Approved for publication
+            * `REJECTED` - Rejected
+    PublicMediaAsset:
+      type: object
+      description: Anonymous representation of a PUBLIC + APPROVED asset.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        mime_type:
+          type: string
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+        alt_text:
+          type: string
+          readOnly: true
+        caption:
+          type: string
+          readOnly: true
+      required:
+      - alt_text
+      - caption
+      - height
+      - id
+      - mime_type
+      - url
+      - width
     SessionLogin:
       type: object
       properties:
@@ -271,6 +674,14 @@ components:
       - first_name
       - id
       - last_name
+    VisibilityEnum:
+      enum:
+      - PUBLIC
+      - PRIVATE
+      type: string
+      description: |-
+        * `PUBLIC` - Public
+        * `PRIVATE` - Private
   securitySchemes:
     cookieAuth:
       type: apiKey

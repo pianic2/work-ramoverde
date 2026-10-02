@@ -6,13 +6,24 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './authorizationStatusEnum';
 export * from './csrfToken';
 export * from './getHealthLive200';
 export * from './getHealthReady200';
 export * from './getHealthReady503';
+export * from './listMediaAssetsParams';
+export * from './listPublicMediaAssetsParams';
+export * from './mediaAsset';
+export * from './mediaAssetUpload';
 export * from './mobileCredentials';
 export * from './mobileLogout';
 export * from './mobileRefresh';
 export * from './mobileTokenResponse';
+export * from './originEnum';
+export * from './paginatedMediaAssetList';
+export * from './paginatedPublicMediaAssetList';
+export * from './patchedMediaAssetUpdate';
+export * from './publicMediaAsset';
 export * from './sessionLogin';
 export * from './user';
+export * from './visibilityEnum';

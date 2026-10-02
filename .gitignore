@@ -26,3 +26,4 @@ test-results/
 *.tsbuildinfo
 uv.lock.tmp
 .template-initialized.json
+apps/backend/mediafiles/

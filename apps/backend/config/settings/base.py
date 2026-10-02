@@ -130,6 +130,56 @@ if os.getenv("S3_STORAGE_ENABLED", "false").lower() == "true":
             "file_overwrite": False,
         },
     }
+
+# Media (WR-21): blobs live in object storage, never in PostgreSQL. Two logical storages keep
+# PUBLIC and PRIVATE assets apart; locally they are directories outside STATIC_ROOT that
+# Django never serves. In production S3_STORAGE_ENABLED switches both to S3/R2 buckets.
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", str(BASE_DIR / "mediafiles")))
+MEDIA_PUBLIC_BASE_URL = os.getenv("MEDIA_PUBLIC_BASE_URL", "/media/public/")
+MEDIA_MAX_UPLOAD_SIZE = int(os.getenv("MEDIA_MAX_UPLOAD_SIZE", str(15 * 1024 * 1024)))
+MEDIA_MAX_VIDEO_UPLOAD_SIZE = int(os.getenv("MEDIA_MAX_VIDEO_UPLOAD_SIZE", str(200 * 1024 * 1024)))
+MEDIA_MAX_IMAGE_PIXELS = int(os.getenv("MEDIA_MAX_IMAGE_PIXELS", str(50_000_000)))
+MEDIA_PRIVATE_URL_TTL = int(os.getenv("MEDIA_PRIVATE_URL_TTL", "300"))
+# True when the private storage can sign short-lived URLs (S3/R2); otherwise downloads stream.
+MEDIA_PRIVATE_PRESIGNED_DOWNLOADS = False
+STORAGES["media_public"] = {
+    "BACKEND": "django.core.files.storage.FileSystemStorage",
+    "OPTIONS": {"location": MEDIA_ROOT / "public", "base_url": MEDIA_PUBLIC_BASE_URL},
+}
+STORAGES["media_private"] = {
+    "BACKEND": "django.core.files.storage.FileSystemStorage",
+    "OPTIONS": {"location": MEDIA_ROOT / "private"},
+}
+if os.getenv("S3_STORAGE_ENABLED", "false").lower() == "true":
+    _s3_common = {
+        "endpoint_url": os.getenv("S3_ENDPOINT_URL") or None,
+        "access_key": os.getenv("S3_ACCESS_KEY_ID") or None,
+        "secret_key": os.getenv("S3_SECRET_ACCESS_KEY") or None,
+        "default_acl": None,
+        "file_overwrite": False,
+    }
+    STORAGES["media_public"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_s3_common,
+            "bucket_name": os.getenv("S3_PUBLIC_BUCKET_NAME") or os.environ["S3_BUCKET_NAME"],
+            "location": os.getenv("S3_PUBLIC_LOCATION", "public"),
+            "custom_domain": os.getenv("S3_PUBLIC_CUSTOM_DOMAIN") or None,
+            "querystring_auth": False,
+        },
+    }
+    STORAGES["media_private"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_s3_common,
+            "bucket_name": os.getenv("S3_PRIVATE_BUCKET_NAME") or os.environ["S3_BUCKET_NAME"],
+            "location": os.getenv("S3_PRIVATE_LOCATION", "private"),
+            "querystring_auth": True,
+            "querystring_expire": MEDIA_PRIVATE_URL_TTL,
+        },
+    }
+    MEDIA_PRIVATE_PRESIGNED_DOWNLOADS = True
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
