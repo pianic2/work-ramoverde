@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-test('home page provides API shell and account navigation', async ({ page }) => {
-  await page.route('**/api/v1/health/live', (route) => route.fulfill({ json: { status: 'ok' } }));
+test('home page renders the RamoVerde shell and reserved-area navigation', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /build the product/i })).toBeVisible();
-  await expect(page.getByRole('status')).toContainText('API connected');
+  await expect(page.getByRole('heading', { level: 1, name: 'RamoVerde' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Area riservata' })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'it');
 });

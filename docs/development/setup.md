@@ -17,3 +17,8 @@ Optional local email: `make dev-email` starts Mailpit at SMTP `localhost:1025` a
 PostgreSQL is the only supported database, locally and in CI. Host-side commands (`make test`, `make api-schema`, `make smoke`) use `DATABASE_URL`, defaulting to `postgresql://app:app@localhost:$(POSTGRES_PORT)/app`; start only the database with `make db`. CI exports `POSTGRES_PORT=5432` for its service container.
 
 Migrations are never applied at startup: run `make migrate` (Compose) or `make smoke` (host: migrate, `makemigrations --check`, boot API, assert `/api/v1/health/ready`). `.env` is git-ignored; `.env.example` contains only local development placeholders.
+
+## Quality gates
+
+- `make check` is the deterministic gate (same inputs → same result): lint, typecheck, tests, contract drift, mobile typecheck/tests/Metro export, web build, migrations check, production `check --deploy`, Compose config and boot smoke. CI mirrors it in the `backend`, `clients`, `contract`, `smoke` and `docker` jobs; any failure blocks the merge.
+- `make live-check` queries live registries (`uv audit`, `pnpm audit`, `expo-doctor` SDK patch expectations). Its result can change without code changes, so CI runs it as the separate `live-checks` job (also weekly). Fix findings promptly, but they are attributed separately from code regressions.

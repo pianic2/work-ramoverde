@@ -10,7 +10,7 @@ export DATABASE_URL
 
 .PHONY: help setup db dev dev-email down logs reset doctor smoke \
         migrate migrations shell lint typecheck test check api-schema api-client api-check \
-        web-test web-e2e mobile-check docker-build format security-check
+        web-test web-e2e mobile-check docker-build format security-check live-check
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*##"}; /^[a-zA-Z_-]+:.*##/ {printf "%-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -76,8 +76,7 @@ web-test: ## Run web unit and component tests
 web-e2e: ## Run the Playwright browser smoke test (requires installed Chromium)
 	corepack pnpm --filter @ramoverde/web test:e2e
 
-mobile-check: ## Validate Expo config, dependencies, types and Android Metro bundle
-	corepack pnpm --filter @ramoverde/mobile exec expo-doctor
+mobile-check: ## Validate mobile types, tests and Android Metro bundle (deterministic)
 	corepack pnpm --filter @ramoverde/mobile typecheck
 	corepack pnpm --filter @ramoverde/mobile test
 	EXPO_PUBLIC_API_URL=https://api.example.com/api/v1 corepack pnpm --filter @ramoverde/mobile exec expo export --platform android
@@ -85,6 +84,10 @@ mobile-check: ## Validate Expo config, dependencies, types and Android Metro bun
 security-check: ## Audit locked Python dependencies and high-severity production JavaScript advisories
 	cd apps/backend && uv audit --locked
 	corepack pnpm audit --prod --audit-level high
+
+live-check: ## Checks against live registries (advisories, Expo SDK patch expectations); may change without code changes
+	$(MAKE) security-check
+	corepack pnpm --filter @ramoverde/mobile exec expo-doctor
 
 test: ## Run backend, web, mobile, and repository script tests
 	cd apps/backend && uv run pytest

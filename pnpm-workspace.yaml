@@ -11,3 +11,11 @@ allowBuilds:
 overrides:
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.7
+
+# Accepted advisories (review on every Expo SDK upgrade; remove as soon as a fix ships).
+# GHSA-86w9-cpqp-85rv: node-forge <=1.4.0 (no patched release) reached only through the
+# Expo CLI (@expo/cli, @expo/code-signing-certificates) used at build/dev time; it is not
+# bundled into the app or executed by the API. Accepted 2026-10-02 (WR-12).
+auditConfig:
+  ignoreGhsas:
+    - GHSA-86w9-cpqp-85rv

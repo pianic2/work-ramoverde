@@ -4,6 +4,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    # Weekly run so live advisory databases (security job) are rechecked without code changes.
+    - cron: "17 4 * * 1"
 permissions:
   contents: read
 concurrency:
@@ -33,7 +36,6 @@ jobs:
       - uses: astral-sh/setup-uv@c7f87aa956e4c323abf06d5dec078e358f6b4d04 # v6.0.0
         with: { enable-cache: true, python-version: "3.13" }
       - run: cd apps/backend && uv sync --locked --all-groups
-      - run: cd apps/backend && uv audit --locked
       - run: cd apps/backend && uv run ruff check . ../../scripts && uv run ruff format --check . ../../scripts
       - run: cd apps/backend && uv run mypy config apps
       - run: cd apps/backend && uv run pytest
@@ -50,15 +52,14 @@ jobs:
         with: { node-version: "24" }
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm audit --prod --audit-level high
       - run: corepack pnpm exec eslint apps packages
       - run: corepack pnpm --filter @ramoverde/api-client typecheck
       - run: corepack pnpm --filter @ramoverde/web typecheck
+      - run: corepack pnpm --filter @ramoverde/shared typecheck
       - run: corepack pnpm --filter @ramoverde/web exec vitest run
       - run: corepack pnpm --filter @ramoverde/web build
       - run: corepack pnpm --filter @ramoverde/web exec playwright install --with-deps chromium
       - run: corepack pnpm --filter @ramoverde/web test:e2e
-      - run: corepack pnpm --filter @ramoverde/mobile exec expo-doctor
       - run: corepack pnpm --filter @ramoverde/mobile typecheck
       - run: corepack pnpm --filter @ramoverde/mobile test
       - run: EXPO_PUBLIC_API_URL=https://api.example.com/api/v1 corepack pnpm --filter @ramoverde/mobile exec expo export --platform android
@@ -86,6 +87,24 @@ jobs:
       - run: cd apps/backend && uv sync --locked --all-groups
       - run: corepack pnpm install --frozen-lockfile
       - run: make api-check
+
+  # Checks against live registries (vulnerability advisories, Expo SDK patch expectations)
+  # change independently of the code: keep them in their own job so a new advisory or
+  # Expo patch release is clearly attributed instead of masking deterministic gates.
+  live-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: astral-sh/setup-uv@c7f87aa956e4c323abf06d5dec078e358f6b4d04 # v6.0.0
+        with: { enable-cache: true, python-version: "3.13" }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: "24" }
+      - run: corepack enable
+      - run: cd apps/backend && uv audit --locked
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm audit --prod --audit-level high
+      - run: corepack pnpm --filter @ramoverde/mobile exec expo-doctor
 
   smoke:
     runs-on: ubuntu-latest
