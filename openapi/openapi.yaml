@@ -138,6 +138,311 @@ paths:
               schema:
                 $ref: '#/components/schemas/MobileTokenResponse'
           description: ''
+  /api/v1/cms/pages:
+    get:
+      operationId: listCmsPages
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPageList'
+          description: ''
+    post:
+      operationId: createCmsPage
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Page'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+  /api/v1/cms/pages/{page_pk}/sections:
+    get:
+      operationId: listCmsPageSections
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PageSection'
+          description: ''
+    post:
+      operationId: createCmsPageSection
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PageSection'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSection'
+          description: ''
+  /api/v1/cms/pages/{page_pk}/sections/{id}:
+    get:
+      operationId: getCmsPageSection
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page section.
+        required: true
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSection'
+          description: ''
+    patch:
+      operationId: updateCmsPageSection
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page section.
+        required: true
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPageSection'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSection'
+          description: ''
+    delete:
+      operationId: deleteCmsPageSection
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page section.
+        required: true
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cms/pages/{page_pk}/sections/order:
+    put:
+      operationId: reorderCmsPageSections
+      description: '`section_ids` must list every section of the page exactly once.'
+      parameters:
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SectionOrder'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PageSection'
+          description: ''
+  /api/v1/cms/pages/{id}:
+    get:
+      operationId: getCmsPage
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+    patch:
+      operationId: updateCmsPage
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPage'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+    delete:
+      operationId: deleteCmsPage
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cms/section-schemas:
+    get:
+      operationId: listCmsSectionSchemas
+      description: Catalogue of section types, versions, variants and content fields
+        (for editor UIs).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SectionSchema'
+          description: ''
   /api/v1/health/live:
     get:
       operationId: getHealthLive
@@ -341,6 +646,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedPublicMediaAssetList'
           description: ''
+  /api/v1/public/pages/{slug}:
+    get:
+      operationId: getPublicPage
+      description: Published page by slug with its enabled sections. Drafts and archived
+        pages are 404.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicPage'
+          description: ''
   /api/v1/users/me:
     get:
       operationId: getUsersMe
@@ -532,6 +859,94 @@ components:
         * `STAFF_UPLOAD` - Uploaded by staff
         * `CLIENT_PROVIDED` - Provided by the client
         * `THIRD_PARTY` - Third party / licensed
+    Page:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        seo_title:
+          type: string
+          maxLength: 70
+        seo_description:
+          type: string
+          maxLength: 300
+        og_image:
+          type: integer
+          nullable: true
+        canonical_url:
+          type: string
+          maxLength: 500
+        noindex:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - published_at
+      - slug
+      - title
+      - updated_at
+    PageSection:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        variant:
+          type: string
+          maxLength: 40
+        position:
+          type: integer
+          readOnly: true
+        enabled:
+          type: boolean
+        schema_version:
+          type: integer
+          minimum: 1
+          description: Defaults to the latest version of the type.
+        content:
+          description: Section content; shape defined by the (type, schema_version)
+            schema.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content
+      - created_at
+      - id
+      - position
+      - type
+      - updated_at
+      - variant
     PaginatedMediaAssetList:
       type: object
       required:
@@ -555,6 +970,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MediaAsset'
+    PaginatedPageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Page'
     PaginatedPublicMediaAssetList:
       type: object
       required:
@@ -604,6 +1042,103 @@ components:
             * `PENDING` - Pending review
             * `APPROVED` - Approved for publication
             * `REJECTED` - Rejected
+    PatchedPage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        seo_title:
+          type: string
+          maxLength: 70
+        seo_description:
+          type: string
+          maxLength: 300
+        og_image:
+          type: integer
+          nullable: true
+        canonical_url:
+          type: string
+          maxLength: 500
+        noindex:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedPageSection:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        variant:
+          type: string
+          maxLength: 40
+        position:
+          type: integer
+          readOnly: true
+        enabled:
+          type: boolean
+        schema_version:
+          type: integer
+          minimum: 1
+          description: Defaults to the latest version of the type.
+        content:
+          description: Section content; shape defined by the (type, schema_version)
+            schema.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PublicMedia:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        mime_type:
+          type: string
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        alt_text:
+          type: string
+      required:
+      - alt_text
+      - height
+      - id
+      - mime_type
+      - url
+      - width
     PublicMediaAsset:
       type: object
       description: Anonymous representation of a PUBLIC + APPROVED asset.
@@ -639,6 +1174,109 @@ components:
       - mime_type
       - url
       - width
+    PublicPage:
+      type: object
+      properties:
+        slug:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        seo:
+          allOf:
+          - $ref: '#/components/schemas/PublicSeo'
+          readOnly: true
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSection'
+          readOnly: true
+      required:
+      - published_at
+      - sections
+      - seo
+      - slug
+      - title
+    PublicSection:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        variant:
+          type: string
+        schema_version:
+          type: integer
+        content:
+          type: object
+          additionalProperties: {}
+          description: Validated content; media ids are replaced by public media objects
+            (or null).
+      required:
+      - content
+      - id
+      - schema_version
+      - type
+      - variant
+    PublicSeo:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        canonical_url:
+          type: string
+          nullable: true
+        noindex:
+          type: boolean
+        og_image:
+          allOf:
+          - $ref: '#/components/schemas/PublicMedia'
+          nullable: true
+      required:
+      - canonical_url
+      - description
+      - noindex
+      - og_image
+      - title
+    SectionOrder:
+      type: object
+      properties:
+        section_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+      required:
+      - section_ids
+    SectionSchema:
+      type: object
+      properties:
+        type:
+          type: string
+        schema_version:
+          type: integer
+        latest:
+          type: boolean
+        variants:
+          type: array
+          items:
+            type: string
+        content_fields:
+          type: object
+          additionalProperties: {}
+          description: Content field name -> field description.
+      required:
+      - content_fields
+      - latest
+      - schema_version
+      - type
+      - variants
     SessionLogin:
       type: object
       properties:
@@ -651,6 +1289,40 @@ components:
       required:
       - email
       - password
+    StatusEnum:
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `PUBLISHED` - Published
+        * `ARCHIVED` - Archived
+    TypeEnum:
+      enum:
+      - hero
+      - services
+      - projects
+      - gallery
+      - text-media
+      - stats
+      - certifications
+      - cta
+      - contact
+      - territory
+      type: string
+      description: |-
+        * `hero` - Hero
+        * `services` - Services
+        * `projects` - Projects
+        * `gallery` - Gallery
+        * `text-media` - Text + media
+        * `stats` - Stats
+        * `certifications` - Certifications
+        * `cta` - Call to action
+        * `contact` - Contact
+        * `territory` - Territory
     User:
       type: object
       properties:

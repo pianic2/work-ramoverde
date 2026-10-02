@@ -26,6 +26,7 @@ import type {
   GetHealthLive200,
   GetHealthReady200,
   GetHealthReady503,
+  ListCmsPagesParams,
   ListMediaAssetsParams,
   ListPublicMediaAssetsParams,
   MediaAsset,
@@ -34,14 +35,42 @@ import type {
   MobileLogout,
   MobileRefresh,
   MobileTokenResponse,
+  Page,
+  PageSection,
   PaginatedMediaAssetList,
+  PaginatedPageList,
   PaginatedPublicMediaAssetList,
   PatchedMediaAssetUpdate,
+  PatchedPage,
+  PatchedPageSection,
+  PublicPage,
+  SectionOrder,
+  SectionSchema,
   SessionLogin,
   User,
 } from './model';
 
 import { customFetch } from '../fetcher';
+
+// https://stackoverflow.com/questions/49579094/typescript-conditional-types-filter-out-readonly-properties-pick-only-requir/49579497#49579497
+type IfEquals<X, Y, A = X, B = never> =
+  (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? A : B;
+
+type WritableKeys<T> = {
+  [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P>;
+}[keyof T];
+
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
+  ? I
+  : never;
+type DistributeReadOnlyOverUnions<T> = T extends any ? NonReadonly<T> : never;
+
+type Writable<T> = Pick<T, WritableKeys<T>>;
+type NonReadonly<T> = [T] extends [UnionToIntersection<T>]
+  ? {
+      [P in keyof Writable<T>]: T[P] extends object ? NonReadonly<NonNullable<T[P]>> : T[P];
+    }
+  : DistributeReadOnlyOverUnions<T>;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
@@ -691,6 +720,1414 @@ export const usePostAuthTokenRefresh = <TError = unknown, TContext = unknown>(
 > => {
   return useMutation(getPostAuthTokenRefreshMutationOptions(options), queryClient);
 };
+
+export type listCmsPagesResponse200 = {
+  data: PaginatedPageList;
+  status: 200;
+};
+
+export type listCmsPagesResponseSuccess = listCmsPagesResponse200 & {
+  headers: Headers;
+};
+export type listCmsPagesResponse = listCmsPagesResponseSuccess;
+
+export const getListCmsPagesUrl = (params?: ListCmsPagesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/cms/pages?${stringifiedParams}`
+    : `/api/v1/cms/pages`;
+};
+
+/**
+ * Staff page management. Drafts are visible here; changing `status` needs publish rights.
+ */
+export const listCmsPages = async (
+  params?: ListCmsPagesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<listCmsPagesResponse> => {
+  return customFetch<listCmsPagesResponse>(getListCmsPagesUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListCmsPagesQueryKey = (params?: ListCmsPagesParams) => {
+  return [`/api/v1/cms/pages`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCmsPagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCmsPages>>,
+  TError = unknown,
+>(
+  params?: ListCmsPagesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCmsPages>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCmsPagesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCmsPages>>> = ({ signal }) =>
+    listCmsPages(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCmsPages>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListCmsPagesQueryResult = NonNullable<Awaited<ReturnType<typeof listCmsPages>>>;
+export type ListCmsPagesQueryError = unknown;
+
+export function useListCmsPages<TData = Awaited<ReturnType<typeof listCmsPages>>, TError = unknown>(
+  params: undefined | ListCmsPagesParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCmsPages>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsPages>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsPages>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsPages<TData = Awaited<ReturnType<typeof listCmsPages>>, TError = unknown>(
+  params?: ListCmsPagesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCmsPages>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsPages>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsPages>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsPages<TData = Awaited<ReturnType<typeof listCmsPages>>, TError = unknown>(
+  params?: ListCmsPagesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCmsPages>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListCmsPages<TData = Awaited<ReturnType<typeof listCmsPages>>, TError = unknown>(
+  params?: ListCmsPagesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCmsPages>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListCmsPagesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createCmsPageResponse201 = {
+  data: Page;
+  status: 201;
+};
+
+export type createCmsPageResponseSuccess = createCmsPageResponse201 & {
+  headers: Headers;
+};
+export type createCmsPageResponse = createCmsPageResponseSuccess;
+
+export const getCreateCmsPageUrl = () => {
+  return `/api/v1/cms/pages`;
+};
+
+/**
+ * Staff page management. Drafts are visible here; changing `status` needs publish rights.
+ */
+export const createCmsPage = async (
+  page: NonReadonly<Page>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<createCmsPageResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<createCmsPageResponse>(getCreateCmsPageUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(page),
+  });
+};
+
+export const getCreateCmsPageMutationKey = () => ['createCmsPage'] as const;
+
+export const getCreateCmsPageMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCmsPage>>,
+    TError,
+    CreateCmsPageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCmsPage>>,
+  TError,
+  CreateCmsPageMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateCmsPageMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCmsPage>>,
+    CreateCmsPageMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCmsPage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCmsPageMutationResult = NonNullable<Awaited<ReturnType<typeof createCmsPage>>>;
+export type CreateCmsPageMutationBody = NonReadonly<Page>;
+export type CreateCmsPageMutationError = unknown;
+export type CreateCmsPageMutationVariables = { data: NonReadonly<Page> };
+
+export const useCreateCmsPage = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createCmsPage>>,
+      TError,
+      CreateCmsPageMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createCmsPage>>,
+  TError,
+  CreateCmsPageMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateCmsPageMutationOptions(options), queryClient);
+};
+
+export type listCmsPageSectionsResponse200 = {
+  data: PageSection[];
+  status: 200;
+};
+
+export type listCmsPageSectionsResponseSuccess = listCmsPageSectionsResponse200 & {
+  headers: Headers;
+};
+export type listCmsPageSectionsResponse = listCmsPageSectionsResponseSuccess;
+
+export const getListCmsPageSectionsUrl = (pagePk: number) => {
+  return `/api/v1/cms/pages/${pagePk}/sections`;
+};
+
+/**
+ * Ordered sections of one page. New sections are appended; use `order` to reorder.
+ */
+export const listCmsPageSections = async (
+  pagePk: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<listCmsPageSectionsResponse> => {
+  return customFetch<listCmsPageSectionsResponse>(getListCmsPageSectionsUrl(pagePk), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListCmsPageSectionsQueryKey = (pagePk: number) => {
+  return [`/api/v1/cms/pages/${pagePk}/sections`] as const;
+};
+
+export const getListCmsPageSectionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCmsPageSections>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsPageSections>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCmsPageSectionsQueryKey(pagePk);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCmsPageSections>>> = ({ signal }) =>
+    listCmsPageSections(pagePk, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: pagePk !== null && pagePk !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listCmsPageSections>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListCmsPageSectionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCmsPageSections>>
+>;
+export type ListCmsPageSectionsQueryError = unknown;
+
+export function useListCmsPageSections<
+  TData = Awaited<ReturnType<typeof listCmsPageSections>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsPageSections>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsPageSections>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsPageSections>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsPageSections<
+  TData = Awaited<ReturnType<typeof listCmsPageSections>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsPageSections>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsPageSections>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsPageSections>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsPageSections<
+  TData = Awaited<ReturnType<typeof listCmsPageSections>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsPageSections>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListCmsPageSections<
+  TData = Awaited<ReturnType<typeof listCmsPageSections>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsPageSections>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListCmsPageSectionsQueryOptions(pagePk, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createCmsPageSectionResponse201 = {
+  data: PageSection;
+  status: 201;
+};
+
+export type createCmsPageSectionResponseSuccess = createCmsPageSectionResponse201 & {
+  headers: Headers;
+};
+export type createCmsPageSectionResponse = createCmsPageSectionResponseSuccess;
+
+export const getCreateCmsPageSectionUrl = (pagePk: number) => {
+  return `/api/v1/cms/pages/${pagePk}/sections`;
+};
+
+/**
+ * Ordered sections of one page. New sections are appended; use `order` to reorder.
+ */
+export const createCmsPageSection = async (
+  pagePk: number,
+  pageSection: NonReadonly<PageSection>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<createCmsPageSectionResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<createCmsPageSectionResponse>(getCreateCmsPageSectionUrl(pagePk), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pageSection),
+  });
+};
+
+export const getCreateCmsPageSectionMutationKey = () => ['createCmsPageSection'] as const;
+
+export const getCreateCmsPageSectionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCmsPageSection>>,
+    TError,
+    CreateCmsPageSectionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCmsPageSection>>,
+  TError,
+  CreateCmsPageSectionMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateCmsPageSectionMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCmsPageSection>>,
+    CreateCmsPageSectionMutationVariables
+  > = (props) => {
+    const { pagePk, data } = props ?? {};
+
+    return createCmsPageSection(pagePk, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCmsPageSectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCmsPageSection>>
+>;
+export type CreateCmsPageSectionMutationBody = NonReadonly<PageSection>;
+export type CreateCmsPageSectionMutationError = unknown;
+export type CreateCmsPageSectionMutationVariables = {
+  pagePk: number;
+  data: NonReadonly<PageSection>;
+};
+
+export const useCreateCmsPageSection = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createCmsPageSection>>,
+      TError,
+      CreateCmsPageSectionMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createCmsPageSection>>,
+  TError,
+  CreateCmsPageSectionMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateCmsPageSectionMutationOptions(options), queryClient);
+};
+
+export type getCmsPageSectionResponse200 = {
+  data: PageSection;
+  status: 200;
+};
+
+export type getCmsPageSectionResponseSuccess = getCmsPageSectionResponse200 & {
+  headers: Headers;
+};
+export type getCmsPageSectionResponse = getCmsPageSectionResponseSuccess;
+
+export const getGetCmsPageSectionUrl = (pagePk: number, id: number) => {
+  return `/api/v1/cms/pages/${pagePk}/sections/${id}`;
+};
+
+/**
+ * Ordered sections of one page. New sections are appended; use `order` to reorder.
+ */
+export const getCmsPageSection = async (
+  pagePk: number,
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getCmsPageSectionResponse> => {
+  return customFetch<getCmsPageSectionResponse>(getGetCmsPageSectionUrl(pagePk, id), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetCmsPageSectionQueryKey = (pagePk: number, id: number) => {
+  return [`/api/v1/cms/pages/${pagePk}/sections/${id}`] as const;
+};
+
+export const getGetCmsPageSectionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCmsPageSection>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  id: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPageSection>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCmsPageSectionQueryKey(pagePk, id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCmsPageSection>>> = ({ signal }) =>
+    getCmsPageSection(pagePk, id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: pagePk !== null && pagePk !== undefined && id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getCmsPageSection>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetCmsPageSectionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCmsPageSection>>
+>;
+export type GetCmsPageSectionQueryError = unknown;
+
+export function useGetCmsPageSection<
+  TData = Awaited<ReturnType<typeof getCmsPageSection>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  id: number,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPageSection>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsPageSection>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsPageSection>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsPageSection<
+  TData = Awaited<ReturnType<typeof getCmsPageSection>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  id: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPageSection>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsPageSection>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsPageSection>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsPageSection<
+  TData = Awaited<ReturnType<typeof getCmsPageSection>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  id: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPageSection>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetCmsPageSection<
+  TData = Awaited<ReturnType<typeof getCmsPageSection>>,
+  TError = unknown,
+>(
+  pagePk: number,
+  id: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPageSection>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetCmsPageSectionQueryOptions(pagePk, id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type updateCmsPageSectionResponse200 = {
+  data: PageSection;
+  status: 200;
+};
+
+export type updateCmsPageSectionResponseSuccess = updateCmsPageSectionResponse200 & {
+  headers: Headers;
+};
+export type updateCmsPageSectionResponse = updateCmsPageSectionResponseSuccess;
+
+export const getUpdateCmsPageSectionUrl = (pagePk: number, id: number) => {
+  return `/api/v1/cms/pages/${pagePk}/sections/${id}`;
+};
+
+/**
+ * Ordered sections of one page. New sections are appended; use `order` to reorder.
+ */
+export const updateCmsPageSection = async (
+  pagePk: number,
+  id: number,
+  patchedPageSection?: NonReadonly<PatchedPageSection>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<updateCmsPageSectionResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<updateCmsPageSectionResponse>(getUpdateCmsPageSectionUrl(pagePk, id), {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchedPageSection),
+  });
+};
+
+export const getUpdateCmsPageSectionMutationKey = () => ['updateCmsPageSection'] as const;
+
+export const getUpdateCmsPageSectionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCmsPageSection>>,
+    TError,
+    UpdateCmsPageSectionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCmsPageSection>>,
+  TError,
+  UpdateCmsPageSectionMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateCmsPageSectionMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCmsPageSection>>,
+    UpdateCmsPageSectionMutationVariables
+  > = (props) => {
+    const { pagePk, id, data } = props ?? {};
+
+    return updateCmsPageSection(pagePk, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCmsPageSectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCmsPageSection>>
+>;
+export type UpdateCmsPageSectionMutationBody = NonReadonly<PatchedPageSection> | undefined;
+export type UpdateCmsPageSectionMutationError = unknown;
+export type UpdateCmsPageSectionMutationVariables = {
+  pagePk: number;
+  id: number;
+  data?: NonReadonly<PatchedPageSection>;
+};
+
+export const useUpdateCmsPageSection = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateCmsPageSection>>,
+      TError,
+      UpdateCmsPageSectionMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateCmsPageSection>>,
+  TError,
+  UpdateCmsPageSectionMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateCmsPageSectionMutationOptions(options), queryClient);
+};
+
+export type deleteCmsPageSectionResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteCmsPageSectionResponseSuccess = deleteCmsPageSectionResponse204 & {
+  headers: Headers;
+};
+export type deleteCmsPageSectionResponse = deleteCmsPageSectionResponseSuccess;
+
+export const getDeleteCmsPageSectionUrl = (pagePk: number, id: number) => {
+  return `/api/v1/cms/pages/${pagePk}/sections/${id}`;
+};
+
+/**
+ * Ordered sections of one page. New sections are appended; use `order` to reorder.
+ */
+export const deleteCmsPageSection = async (
+  pagePk: number,
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<deleteCmsPageSectionResponse> => {
+  return customFetch<deleteCmsPageSectionResponse>(getDeleteCmsPageSectionUrl(pagePk, id), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteCmsPageSectionMutationKey = () => ['deleteCmsPageSection'] as const;
+
+export const getDeleteCmsPageSectionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCmsPageSection>>,
+    TError,
+    DeleteCmsPageSectionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCmsPageSection>>,
+  TError,
+  DeleteCmsPageSectionMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteCmsPageSectionMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCmsPageSection>>,
+    DeleteCmsPageSectionMutationVariables
+  > = (props) => {
+    const { pagePk, id } = props ?? {};
+
+    return deleteCmsPageSection(pagePk, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCmsPageSectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCmsPageSection>>
+>;
+
+export type DeleteCmsPageSectionMutationError = unknown;
+export type DeleteCmsPageSectionMutationVariables = { pagePk: number; id: number };
+
+export const useDeleteCmsPageSection = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteCmsPageSection>>,
+      TError,
+      DeleteCmsPageSectionMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCmsPageSection>>,
+  TError,
+  DeleteCmsPageSectionMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteCmsPageSectionMutationOptions(options), queryClient);
+};
+
+export type reorderCmsPageSectionsResponse200 = {
+  data: PageSection[];
+  status: 200;
+};
+
+export type reorderCmsPageSectionsResponseSuccess = reorderCmsPageSectionsResponse200 & {
+  headers: Headers;
+};
+export type reorderCmsPageSectionsResponse = reorderCmsPageSectionsResponseSuccess;
+
+export const getReorderCmsPageSectionsUrl = (pagePk: number) => {
+  return `/api/v1/cms/pages/${pagePk}/sections/order`;
+};
+
+/**
+ * `section_ids` must list every section of the page exactly once.
+ */
+export const reorderCmsPageSections = async (
+  pagePk: number,
+  sectionOrder: SectionOrder,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<reorderCmsPageSectionsResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<reorderCmsPageSectionsResponse>(getReorderCmsPageSectionsUrl(pagePk), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sectionOrder),
+  });
+};
+
+export const getReorderCmsPageSectionsMutationKey = () => ['reorderCmsPageSections'] as const;
+
+export const getReorderCmsPageSectionsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reorderCmsPageSections>>,
+    TError,
+    ReorderCmsPageSectionsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reorderCmsPageSections>>,
+  TError,
+  ReorderCmsPageSectionsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReorderCmsPageSectionsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reorderCmsPageSections>>,
+    ReorderCmsPageSectionsMutationVariables
+  > = (props) => {
+    const { pagePk, data } = props ?? {};
+
+    return reorderCmsPageSections(pagePk, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReorderCmsPageSectionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reorderCmsPageSections>>
+>;
+export type ReorderCmsPageSectionsMutationBody = SectionOrder;
+export type ReorderCmsPageSectionsMutationError = unknown;
+export type ReorderCmsPageSectionsMutationVariables = { pagePk: number; data: SectionOrder };
+
+export const useReorderCmsPageSections = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reorderCmsPageSections>>,
+      TError,
+      ReorderCmsPageSectionsMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reorderCmsPageSections>>,
+  TError,
+  ReorderCmsPageSectionsMutationVariables,
+  TContext
+> => {
+  return useMutation(getReorderCmsPageSectionsMutationOptions(options), queryClient);
+};
+
+export type getCmsPageResponse200 = {
+  data: Page;
+  status: 200;
+};
+
+export type getCmsPageResponseSuccess = getCmsPageResponse200 & {
+  headers: Headers;
+};
+export type getCmsPageResponse = getCmsPageResponseSuccess;
+
+export const getGetCmsPageUrl = (id: number) => {
+  return `/api/v1/cms/pages/${id}`;
+};
+
+/**
+ * Staff page management. Drafts are visible here; changing `status` needs publish rights.
+ */
+export const getCmsPage = async (
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getCmsPageResponse> => {
+  return customFetch<getCmsPageResponse>(getGetCmsPageUrl(id), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetCmsPageQueryKey = (id: number) => {
+  return [`/api/v1/cms/pages/${id}`] as const;
+};
+
+export const getGetCmsPageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCmsPage>>,
+  TError = unknown,
+>(
+  id: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPage>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCmsPageQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCmsPage>>> = ({ signal }) =>
+    getCmsPage(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getCmsPage>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetCmsPageQueryResult = NonNullable<Awaited<ReturnType<typeof getCmsPage>>>;
+export type GetCmsPageQueryError = unknown;
+
+export function useGetCmsPage<TData = Awaited<ReturnType<typeof getCmsPage>>, TError = unknown>(
+  id: number,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPage>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsPage>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsPage>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsPage<TData = Awaited<ReturnType<typeof getCmsPage>>, TError = unknown>(
+  id: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPage>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsPage>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsPage>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsPage<TData = Awaited<ReturnType<typeof getCmsPage>>, TError = unknown>(
+  id: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPage>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetCmsPage<TData = Awaited<ReturnType<typeof getCmsPage>>, TError = unknown>(
+  id: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsPage>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetCmsPageQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type updateCmsPageResponse200 = {
+  data: Page;
+  status: 200;
+};
+
+export type updateCmsPageResponseSuccess = updateCmsPageResponse200 & {
+  headers: Headers;
+};
+export type updateCmsPageResponse = updateCmsPageResponseSuccess;
+
+export const getUpdateCmsPageUrl = (id: number) => {
+  return `/api/v1/cms/pages/${id}`;
+};
+
+/**
+ * Staff page management. Drafts are visible here; changing `status` needs publish rights.
+ */
+export const updateCmsPage = async (
+  id: number,
+  patchedPage?: NonReadonly<PatchedPage>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<updateCmsPageResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<updateCmsPageResponse>(getUpdateCmsPageUrl(id), {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchedPage),
+  });
+};
+
+export const getUpdateCmsPageMutationKey = () => ['updateCmsPage'] as const;
+
+export const getUpdateCmsPageMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCmsPage>>,
+    TError,
+    UpdateCmsPageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCmsPage>>,
+  TError,
+  UpdateCmsPageMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateCmsPageMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCmsPage>>,
+    UpdateCmsPageMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateCmsPage(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCmsPageMutationResult = NonNullable<Awaited<ReturnType<typeof updateCmsPage>>>;
+export type UpdateCmsPageMutationBody = NonReadonly<PatchedPage> | undefined;
+export type UpdateCmsPageMutationError = unknown;
+export type UpdateCmsPageMutationVariables = { id: number; data?: NonReadonly<PatchedPage> };
+
+export const useUpdateCmsPage = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateCmsPage>>,
+      TError,
+      UpdateCmsPageMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateCmsPage>>,
+  TError,
+  UpdateCmsPageMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateCmsPageMutationOptions(options), queryClient);
+};
+
+export type deleteCmsPageResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteCmsPageResponseSuccess = deleteCmsPageResponse204 & {
+  headers: Headers;
+};
+export type deleteCmsPageResponse = deleteCmsPageResponseSuccess;
+
+export const getDeleteCmsPageUrl = (id: number) => {
+  return `/api/v1/cms/pages/${id}`;
+};
+
+/**
+ * Staff page management. Drafts are visible here; changing `status` needs publish rights.
+ */
+export const deleteCmsPage = async (
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<deleteCmsPageResponse> => {
+  return customFetch<deleteCmsPageResponse>(getDeleteCmsPageUrl(id), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteCmsPageMutationKey = () => ['deleteCmsPage'] as const;
+
+export const getDeleteCmsPageMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCmsPage>>,
+    TError,
+    DeleteCmsPageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCmsPage>>,
+  TError,
+  DeleteCmsPageMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteCmsPageMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCmsPage>>,
+    DeleteCmsPageMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteCmsPage(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCmsPageMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCmsPage>>>;
+
+export type DeleteCmsPageMutationError = unknown;
+export type DeleteCmsPageMutationVariables = { id: number };
+
+export const useDeleteCmsPage = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteCmsPage>>,
+      TError,
+      DeleteCmsPageMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCmsPage>>,
+  TError,
+  DeleteCmsPageMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteCmsPageMutationOptions(options), queryClient);
+};
+
+export type listCmsSectionSchemasResponse200 = {
+  data: SectionSchema[];
+  status: 200;
+};
+
+export type listCmsSectionSchemasResponseSuccess = listCmsSectionSchemasResponse200 & {
+  headers: Headers;
+};
+export type listCmsSectionSchemasResponse = listCmsSectionSchemasResponseSuccess;
+
+export const getListCmsSectionSchemasUrl = () => {
+  return `/api/v1/cms/section-schemas`;
+};
+
+/**
+ * Catalogue of section types, versions, variants and content fields (for editor UIs).
+ */
+export const listCmsSectionSchemas = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<listCmsSectionSchemasResponse> => {
+  return customFetch<listCmsSectionSchemasResponse>(getListCmsSectionSchemasUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListCmsSectionSchemasQueryKey = () => {
+  return [`/api/v1/cms/section-schemas`] as const;
+};
+
+export const getListCmsSectionSchemasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCmsSectionSchemas>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof listCmsSectionSchemas>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCmsSectionSchemasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCmsSectionSchemas>>> = ({ signal }) =>
+    listCmsSectionSchemas({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCmsSectionSchemas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListCmsSectionSchemasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCmsSectionSchemas>>
+>;
+export type ListCmsSectionSchemasQueryError = unknown;
+
+export function useListCmsSectionSchemas<
+  TData = Awaited<ReturnType<typeof listCmsSectionSchemas>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsSectionSchemas>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsSectionSchemas>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsSectionSchemas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsSectionSchemas<
+  TData = Awaited<ReturnType<typeof listCmsSectionSchemas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsSectionSchemas>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsSectionSchemas>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsSectionSchemas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsSectionSchemas<
+  TData = Awaited<ReturnType<typeof listCmsSectionSchemas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsSectionSchemas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListCmsSectionSchemas<
+  TData = Awaited<ReturnType<typeof listCmsSectionSchemas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsSectionSchemas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListCmsSectionSchemasQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export type getHealthLiveResponse200 = {
   data: GetHealthLive200;
@@ -1803,6 +3240,137 @@ export function useListPublicMediaAssets<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getListPublicMediaAssetsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type getPublicPageResponse200 = {
+  data: PublicPage;
+  status: 200;
+};
+
+export type getPublicPageResponseSuccess = getPublicPageResponse200 & {
+  headers: Headers;
+};
+export type getPublicPageResponse = getPublicPageResponseSuccess;
+
+export const getGetPublicPageUrl = (slug: string) => {
+  return `/api/v1/public/pages/${slug}`;
+};
+
+/**
+ * Published page by slug with its enabled sections. Drafts and archived pages are 404.
+ */
+export const getPublicPage = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getPublicPageResponse> => {
+  return customFetch<getPublicPageResponse>(getGetPublicPageUrl(slug), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetPublicPageQueryKey = (slug: string) => {
+  return [`/api/v1/public/pages/${slug}`] as const;
+};
+
+export const getGetPublicPageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPublicPage>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPage>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPublicPageQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicPage>>> = ({ signal }) =>
+    getPublicPage(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: slug !== null && slug !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getPublicPage>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetPublicPageQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicPage>>>;
+export type GetPublicPageQueryError = unknown;
+
+export function useGetPublicPage<
+  TData = Awaited<ReturnType<typeof getPublicPage>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPage>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicPage>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicPage>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetPublicPage<
+  TData = Awaited<ReturnType<typeof getPublicPage>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPage>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicPage>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicPage>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetPublicPage<
+  TData = Awaited<ReturnType<typeof getPublicPage>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPage>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetPublicPage<
+  TData = Awaited<ReturnType<typeof getPublicPage>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPage>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetPublicPageQueryOptions(slug, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
