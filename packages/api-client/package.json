@@ -1,0 +1,1 @@
+{"name":"@ramoverde/api-client","version":"0.1.0","private":true,"type":"module","exports":"./src/index.ts","scripts":{"lint":"eslint src","typecheck":"tsc -p tsconfig.json","test":"node --test"},"dependencies":{"@ramoverde/typescript-config":"workspace:*","@tanstack/react-query":"5.103.2"}}

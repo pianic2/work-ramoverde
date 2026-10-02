@@ -1,0 +1,72 @@
+name: ${COMPOSE_PROJECT_NAME:-ramoverde}
+
+services:
+  postgres:
+    image: postgres:18.4-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+    ports: ["127.0.0.1:${POSTGRES_PORT:-5440}:5432"]
+    volumes: [postgres-data:/var/lib/postgresql]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+      target: development
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@postgres:5432/${POSTGRES_DB:-app}
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DJANGO_DEBUG: "true"
+      UV_EXTRA_ARGS: ${UV_EXTRA_ARGS:-}
+      S3_STORAGE_ENABLED: ${S3_STORAGE_ENABLED:-false}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+    ports: ["127.0.0.1:${API_PORT:-8010}:8000"]
+    volumes: [./apps/backend:/app, backend-venv:/app/.venv]
+    command: ["sh", "-c", "uv sync --all-groups $${UV_EXTRA_ARGS} && uv run python manage.py runserver 0.0.0.0:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')"]
+      interval: 10s
+      timeout: 4s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.web
+      target: development
+    environment:
+      VITE_API_BASE_URL: ${API_BASE_URL:-http://localhost:8010/api/v1}
+    ports: ["127.0.0.1:${WEB_PORT:-5180}:5173"]
+    volumes:
+      - .:/workspace
+      - web-node-modules:/workspace/node_modules
+    command: ["corepack", "pnpm", "--filter", "@ramoverde/web", "dev", "--host", "0.0.0.0"]
+    depends_on:
+      backend: { condition: service_healthy }
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.27.8@sha256:6abc8e633df15eaf785cfcf38bae48e66f64beecdc03121e249d0f9ec15f0707
+    profiles: [email]
+    ports: ["127.0.0.1:1025:1025", "127.0.0.1:8025:8025"]
+
+volumes:
+  postgres-data:
+  backend-venv:
+  web-node-modules:

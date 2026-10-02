@@ -1,0 +1,5 @@
+name = "web"
+description = "Accessible React web implementation specialist."
+developer_instructions = """
+Follow apps/web/AGENTS.md. Use the generated API client, accessible DOM semantics, React Router and TanStack Query. Do not import React Native UI packages. Keep changes scoped and run web tests, typecheck and build.
+"""

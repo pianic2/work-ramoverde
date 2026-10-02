@@ -1,0 +1,284 @@
+openapi: 3.0.3
+info:
+  title: RamoVerde API
+  version: 1.0.0
+  description: Versioned REST contract shared by the RamoVerde web and mobile clients.
+paths:
+  /api/v1/auth/csrf:
+    get:
+      operationId: getAuthCsrf
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfToken'
+          description: ''
+  /api/v1/auth/session/login:
+    post:
+      operationId: postAuthSessionLogin
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionLogin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionLogin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionLogin'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/auth/session/logout:
+    post:
+      operationId: postAuthSessionLogout
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/token:
+    post:
+      operationId: postAuthToken
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileCredentials'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MobileCredentials'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MobileCredentials'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenResponse'
+          description: ''
+  /api/v1/auth/token/logout:
+    post:
+      operationId: postAuthTokenLogout
+      description: |-
+        Takes a token and blacklists it. Must be used with the
+        `rest_framework_simplejwt.token_blacklist` app installed.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileLogout'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MobileLogout'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MobileLogout'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/token/refresh:
+    post:
+      operationId: postAuthTokenRefresh
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MobileRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MobileRefresh'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenResponse'
+          description: ''
+  /api/v1/health/live:
+    get:
+      operationId: getHealthLive
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/health/ready:
+    get:
+      operationId: getHealthReady
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/users/me:
+    get:
+      operationId: getUsersMe
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+components:
+  schemas:
+    CsrfToken:
+      type: object
+      properties:
+        csrfToken:
+          type: string
+      required:
+      - csrfToken
+    MobileCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    MobileLogout:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - refresh
+    MobileRefresh:
+      type: object
+      properties:
+        refresh:
+          type: string
+      required:
+      - refresh
+    MobileTokenResponse:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    SessionLogin:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+          title: Nome
+        last_name:
+          type: string
+          readOnly: true
+          title: Cognome
+      required:
+      - email
+      - first_name
+      - id
+      - last_name
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+servers:
+- url: http://localhost:8010

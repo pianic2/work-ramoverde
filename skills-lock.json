@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "repo-docs": {
+      "source": "pianic2/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/repo-docs/SKILL.md",
+      "computedHash": "0c0ae2e5820b23a4007537f9a8f69e5d2c421e18a858c8575d720ff99dd58873"
+    },
+    "repo-readme": {
+      "source": "pianic2/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/repo-readme/SKILL.md",
+      "computedHash": "082d65fcd93f87df4e8ce6594bb0bcdebac302f1f18530761d187bec020032ff"
+    }
+  }
+}

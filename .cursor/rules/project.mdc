@@ -1,0 +1,6 @@
+---
+description: Repository-wide architecture and validation rules
+alwaysApply: true
+---
+
+Follow `AGENTS.md` and the nearest nested instructions. Use `make help` for commands. OpenAPI owns API contracts; generated files are not hand-edited. Before creating generic React Native UI, inspect and reuse `@personal-library/react-native-components` public exports.
