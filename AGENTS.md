@@ -8,6 +8,7 @@
 - Mobile UI belongs in `apps/mobile` and consumes the canonical `@personal-library/react-native-components` library.
 - Generic reusable native UI primitives belong in the personal library. Product/domain UI belongs in the application.
 - PostgreSQL is the only supported database. Migrations are committed source files.
+- Django module ownership and allowed imports: `docs/architecture/domain-modules.md`, enforced by `apps/backend/tests/test_architecture_boundaries.py`. Staff API authorization goes through `apps.accounts.permissions`.
 
 ## Commands
 
