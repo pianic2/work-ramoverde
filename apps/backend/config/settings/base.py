@@ -182,9 +182,19 @@ LOGGING = {
 # Web staff use Django sessions (HttpOnly cookie + CSRF); mobile uses JWT. Every staff request
 # must be backed by an active, tracked `accounts.UserSession`.
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
-    "rest_framework_simplejwt.authentication.JWTAuthentication",
+    "apps.accounts.authentication.StaffJWTAuthentication",
     "apps.accounts.authentication.StaffSessionAuthentication",
 ]
+# Mobile: 5-minute access tokens, rotating refresh tokens (old ones blacklisted, reuse revokes
+# the whole session), tokens invalidated by password changes, and an absolute session age.
+SIMPLE_JWT.update(
+    {
+        "CHECK_REVOKE_TOKEN": True,
+        "UPDATE_LAST_LOGIN": False,
+        "USER_AUTHENTICATION_RULE": "apps.accounts.auth_sessions.is_staff_account_active",
+    }
+)
+MOBILE_SESSION_MAX_AGE = timedelta(days=int(os.getenv("MOBILE_SESSION_MAX_AGE_DAYS", "30")))
 # Where Django admin and password-reset emails send people to sign in (React backoffice).
 STAFF_LOGIN_URL = os.getenv("STAFF_LOGIN_URL", "http://localhost:5180/admin/login")
 SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", str(8 * 60 * 60)))

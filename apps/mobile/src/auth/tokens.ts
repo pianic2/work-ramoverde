@@ -6,8 +6,8 @@ import {
 } from '@ramoverde/api-client';
 import * as SecureStore from 'expo-secure-store';
 
-const ACCESS_KEY = 'product.access-token';
-const REFRESH_KEY = 'product.refresh-token';
+const ACCESS_KEY = 'ramoverde.access-token';
+const REFRESH_KEY = 'ramoverde.refresh-token';
 let authGeneration = 0;
 let tokenWrites: Promise<void> = Promise.resolve();
 let refreshInFlight: { generation: number; promise: Promise<string | null> } | null = null;
@@ -20,6 +20,11 @@ function queueTokenWrite(action: () => Promise<void>): Promise<void> {
 
 function writeForCurrentSession(generation: number, action: () => Promise<void>): Promise<void> {
   return queueTokenWrite(() => (generation === authGeneration ? action() : Promise.resolve()));
+}
+
+/** Current access token for the API transport. Tokens live only in Expo SecureStore. */
+export function readAccessToken(): Promise<string | null> {
+  return SecureStore.getItemAsync(ACCESS_KEY);
 }
 
 export async function signIn(email: string, password: string): Promise<void> {

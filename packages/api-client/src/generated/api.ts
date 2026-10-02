@@ -172,6 +172,9 @@ export const getPostAuthSessionLoginUrl = () => {
   return `/api/v1/auth/session/login`;
 };
 
+/**
+ * Unauthenticated auth endpoint that reports failures as 401 with a generic message.
+ */
 export const postAuthSessionLogin = async (
   sessionLogin: SessionLogin,
   options?: Parameters<typeof customFetch>[1],
@@ -363,8 +366,7 @@ export const getPostAuthTokenUrl = () => {
 };
 
 /**
- * Takes a set of user credentials and returns an access and refresh JSON web
- * token pair to prove the authentication of those credentials.
+ * Unauthenticated auth endpoint that reports failures as 401 with a generic message.
  */
 export const postAuthToken = async (
   mobileCredentials: MobileCredentials,
@@ -457,12 +459,12 @@ export const usePostAuthToken = <TError = unknown, TContext = unknown>(
   return useMutation(getPostAuthTokenMutationOptions(options), queryClient);
 };
 
-export type postAuthTokenLogoutResponse200 = {
+export type postAuthTokenLogoutResponse204 = {
   data: void;
-  status: 200;
+  status: 204;
 };
 
-export type postAuthTokenLogoutResponseSuccess = postAuthTokenLogoutResponse200 & {
+export type postAuthTokenLogoutResponseSuccess = postAuthTokenLogoutResponse204 & {
   headers: Headers;
 };
 export type postAuthTokenLogoutResponse = postAuthTokenLogoutResponseSuccess;
@@ -472,8 +474,7 @@ export const getPostAuthTokenLogoutUrl = () => {
 };
 
 /**
- * Takes a token and blacklists it. Must be used with the
- * `rest_framework_simplejwt.token_blacklist` app installed.
+ * Unauthenticated auth endpoint that reports failures as 401 with a generic message.
  */
 export const postAuthTokenLogout = async (
   mobileLogout: MobileLogout,
@@ -586,8 +587,7 @@ export const getPostAuthTokenRefreshUrl = () => {
 };
 
 /**
- * Takes a refresh type JSON web token and returns an access type JSON web
- * token if the refresh token is valid.
+ * Unauthenticated auth endpoint that reports failures as 401 with a generic message.
  */
 export const postAuthTokenRefresh = async (
   mobileRefresh: MobileRefresh,

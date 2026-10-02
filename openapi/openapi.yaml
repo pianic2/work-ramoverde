@@ -21,6 +21,8 @@ paths:
   /api/v1/auth/session/login:
     post:
       operationId: postAuthSessionLogin
+      description: Unauthenticated auth endpoint that reports failures as 401 with
+        a generic message.
       tags:
       - v1
       requestBody:
@@ -57,9 +59,8 @@ paths:
   /api/v1/auth/token:
     post:
       operationId: postAuthToken
-      description: |-
-        Takes a set of user credentials and returns an access and refresh JSON web
-        token pair to prove the authentication of those credentials.
+      description: Unauthenticated auth endpoint that reports failures as 401 with
+        a generic message.
       tags:
       - v1
       requestBody:
@@ -86,9 +87,8 @@ paths:
   /api/v1/auth/token/logout:
     post:
       operationId: postAuthTokenLogout
-      description: |-
-        Takes a token and blacklists it. Must be used with the
-        `rest_framework_simplejwt.token_blacklist` app installed.
+      description: Unauthenticated auth endpoint that reports failures as 401 with
+        a generic message.
       tags:
       - v1
       requestBody:
@@ -106,14 +106,13 @@ paths:
       security:
       - {}
       responses:
-        '200':
+        '204':
           description: No response body
   /api/v1/auth/token/refresh:
     post:
       operationId: postAuthTokenRefresh
-      description: |-
-        Takes a refresh type JSON web token and returns an access type JSON web
-        token if the refresh token is valid.
+      description: Unauthenticated auth endpoint that reports failures as 401 with
+        a generic message.
       tags:
       - v1
       requestBody:

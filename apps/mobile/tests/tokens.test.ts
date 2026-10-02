@@ -65,8 +65,8 @@ it('does not replace a new account with an older in-flight refresh', async () =>
   await signIn('new@example.com', 'password');
   resolve('rotated-access', 'rotated-refresh');
   expect(await refreshing).toBeNull();
-  expect(stored.get('product.access-token')).toBe('new-access');
-  expect(stored.get('product.refresh-token')).toBe('new-refresh');
+  expect(stored.get('ramoverde.access-token')).toBe('new-access');
+  expect(stored.get('ramoverde.refresh-token')).toBe('new-refresh');
 });
 
 it('revokes the refresh token even when local deletion fails', async () => {
@@ -88,6 +88,6 @@ it('clears the old session before a concurrent new sign-in writes tokens', async
   await Promise.all([loggingOut, loggingIn]);
 
   expect(postAuthTokenLogout).toHaveBeenCalledWith({ refresh: 'old-refresh' });
-  expect(stored.get('product.access-token')).toBe('new-access');
-  expect(stored.get('product.refresh-token')).toBe('new-refresh');
+  expect(stored.get('ramoverde.access-token')).toBe('new-access');
+  expect(stored.get('ramoverde.refresh-token')).toBe('new-refresh');
 });

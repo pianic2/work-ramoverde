@@ -38,7 +38,9 @@ def test_current_user_requires_auth_and_returns_email_identity():
 
 @pytest.mark.django_db
 def test_mobile_jwt_can_access_current_user():
-    user = User.objects.create_user(email="mobile@example.com", password="correct-horse-battery")
+    user = User.objects.create_user(
+        email="mobile@example.com", password="correct-horse-battery", is_staff=True
+    )
     client = APIClient()
     token = client.post(
         "/api/v1/auth/token", {"email": user.email, "password": "correct-horse-battery"}
@@ -52,7 +54,9 @@ def test_mobile_jwt_can_access_current_user():
 def test_valid_mobile_token_attempts_are_throttled_without_throttling_other_api_scopes(
     one_request_auth_throttle_rate: None,
 ):
-    user = User.objects.create_user(email="rate@example.com", password="correct-horse-battery")
+    user = User.objects.create_user(
+        email="rate@example.com", password="correct-horse-battery", is_staff=True
+    )
     client = APIClient()
     credentials = {"email": user.email, "password": "correct-horse-battery"}
 

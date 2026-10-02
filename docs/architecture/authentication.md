@@ -18,7 +18,18 @@ Django admin is mounted at `/django-admin/` for technical superusers only. It ne
 
 ## Native
 
-Mobile obtains short-lived access and refresh JWTs from `/api/v1/auth/token` and `/api/v1/auth/token/refresh`. SimpleJWT supplies token signing and validation. The app stores credentials in Expo SecureStore through a small auth adapter; it must never use AsyncStorage or Expo public env variables for secrets. The shared Fetch transport retries an authenticated request once after a 401, using the rotating refresh token. Refresh calls omit the access token and skip refresh recursion. Concurrent refresh attempts share one promise. Production deployments still require HTTPS and should review token lifetimes and revocation policy.
+Mobile obtains short-lived access and refresh JWTs from `/api/v1/auth/token` and `/api/v1/auth/token/refresh`. SimpleJWT supplies token signing and validation. The app stores credentials in Expo SecureStore (`ramoverde.access-token`, `ramoverde.refresh-token`) through `apps/mobile/src/auth/tokens.ts`; it must never use AsyncStorage or Expo public env variables for secrets (`EXPO_PUBLIC_API_URL` is the only public variable; a Jest test enforces both rules). The shared Fetch transport retries an authenticated request once after a 401, using the rotating refresh token. Refresh calls omit the access token and skip refresh recursion. Concurrent refresh attempts share one promise.
+
+Token lifecycle:
+
+| Item | Policy |
+| --- | --- |
+| Access token | 5 minutes; carries `sid` (tracked `UserSession` id). `StaffJWTAuthentication` rejects it as soon as that session is revoked, so revocation is immediate, not after expiry. |
+| Refresh token | 1 day sliding, rotated on every use; the used token is blacklisted. Presenting an already-rotated token is treated as theft: the whole session is revoked and `auth.token.reuse_detected` is audited. Concurrent refreshes are serialized by a row lock on the session. |
+| Absolute session age | `MOBILE_SESSION_MAX_AGE_DAYS` (default 30); afterwards refresh is refused and the user signs in again. |
+| Password change/reset | `CHECK_REVOKE_TOKEN` binds tokens to the password hash, so every outstanding token stops working. |
+| Logout | `POST /api/v1/auth/token/logout` blacklists the refresh token and revokes the session (204); the app deletes both SecureStore entries even if the network call fails. |
+| Account state | Only active staff accounts can obtain or refresh tokens. |
 
 ## Common contract
 
