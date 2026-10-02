@@ -39,3 +39,36 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()  # type: ignore[assignment,misc]
+
+
+class UserSession(models.Model):
+    """A signed-in device: one Django web session or one mobile refresh-token family.
+
+    Every staff request is authenticated against an active row, so revoking it here
+    immediately invalidates the browser session or the mobile access/refresh tokens.
+    """
+
+    class Kind(models.TextChoices):
+        WEB = "web", "Web"
+        MOBILE = "mobile", "Mobile"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="auth_sessions")
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    session_key = models.CharField(max_length=40, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=512, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_reason = models.CharField(max_length=64, blank=True)
+
+    class Meta:
+        ordering = ["-last_seen_at", "-id"]
+        indexes = [models.Index(fields=["user", "revoked_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.kind} session {self.pk}"
+
+    @property
+    def is_active(self) -> bool:
+        return self.revoked_at is None

@@ -50,7 +50,6 @@ paths:
       tags:
       - v1
       security:
-      - jwtAuth: []
       - cookieAuth: []
       responses:
         '204':

@@ -147,7 +147,9 @@ def test_mobile_refresh_and_logout_are_public_but_require_refresh_tokens():
 
 @pytest.mark.django_db
 def test_browser_session_login_requires_csrf_and_uses_session_cookie():
-    User.objects.create_user(email="web@example.com", password="correct-horse-battery")
+    User.objects.create_user(
+        email="web@example.com", password="correct-horse-battery", is_staff=True
+    )
     client = APIClient(enforce_csrf_checks=True)
     without_csrf = client.post(
         "/api/v1/auth/session/login",

@@ -15,7 +15,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "apps.accounts.apps.StaffAdminConfig",  # django.contrib.admin, locked down
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -177,3 +177,15 @@ LOGGING = {
     },
     "root": {"handlers": ["console"], "level": os.getenv("LOG_LEVEL", "INFO")},
 }
+
+# --- Staff authentication and security (owned by accounts/audit, WR-13…WR-18) ---------------
+# Web staff use Django sessions (HttpOnly cookie + CSRF); mobile uses JWT. Every staff request
+# must be backed by an active, tracked `accounts.UserSession`.
+REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
+    "rest_framework_simplejwt.authentication.JWTAuthentication",
+    "apps.accounts.authentication.StaffSessionAuthentication",
+]
+# Where Django admin and password-reset emails send people to sign in (React backoffice).
+STAFF_LOGIN_URL = os.getenv("STAFF_LOGIN_URL", "http://localhost:5180/admin/login")
+SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", str(8 * 60 * 60)))
+SESSION_COOKIE_NAME = "sessionid"

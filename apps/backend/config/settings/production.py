@@ -35,3 +35,8 @@ SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Staff sign-in page (React backoffice). Defaults to the first allowed web origin.
+STAFF_LOGIN_URL = os.getenv("STAFF_LOGIN_URL", f"{CORS_ALLOWED_ORIGINS[0]}/admin/login")
+if urlsplit(STAFF_LOGIN_URL).scheme != "https":
+    raise RuntimeError("STAFF_LOGIN_URL must use HTTPS in production")

@@ -6,7 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from apps.core.health import LivenessView, ReadinessView
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    # Technical superuser admin only; the staff backoffice is the React app at web /admin/*.
+    path("django-admin/", admin.site.urls),
     path("api/v1/health/live", LivenessView.as_view(), name="health-live"),
     path("api/v1/health/ready", ReadinessView.as_view(), name="health-ready"),
     path("api/v1/", include("apps.accounts.urls")),
