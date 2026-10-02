@@ -50,7 +50,7 @@ shell: ## Open a Django shell
 	$(COMPOSE) exec backend python manage.py shell
 
 api-schema: ## Generate OpenAPI from Django
-	cd apps/backend && uv run python manage.py spectacular --file ../../openapi/openapi.yaml --validate
+	cd apps/backend && uv run python manage.py spectacular --file ../../openapi/openapi.yaml --validate --fail-on-warn
 
 api-client: ## Generate TypeScript clients from the committed OpenAPI contract
 	corepack pnpm exec orval --config orval.config.ts
