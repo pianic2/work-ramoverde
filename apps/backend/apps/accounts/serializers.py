@@ -2,7 +2,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from .models import User, WebAuthnCredential
+from .models import User, UserSession, WebAuthnCredential
 
 MFA_METHODS = [("totp", "TOTP"), ("recovery", "Recovery code"), ("webauthn", "WebAuthn")]
 MOBILE_MFA_METHODS = [("totp", "TOTP"), ("recovery", "Recovery code")]
@@ -14,9 +14,19 @@ AUTH_FLOW_STATUSES = [
 
 
 class UserSerializer(serializers.ModelSerializer[User]):
+    password_change_required = serializers.BooleanField(source="password_expired", read_only=True)
+    password_expires_at = serializers.DateTimeField(read_only=True, allow_null=True)
+
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name"]
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "password_change_required",
+            "password_expires_at",
+        ]
         read_only_fields = fields
 
 
@@ -127,3 +137,56 @@ class RecoveryCodesSerializer(serializers.Serializer[dict[str, Any]]):
 
 class StepUpResponseSerializer(serializers.Serializer[dict[str, Any]]):
     mfa_verified_at = serializers.DateTimeField()
+
+
+# --- Passwords and sessions (WR-16) -------------------------------------------------------
+
+
+class PasswordChangeSerializer(serializers.Serializer[dict[str, Any]]):
+    current_password = serializers.CharField(
+        trim_whitespace=False, write_only=True, max_length=4096
+    )
+    new_password = serializers.CharField(trim_whitespace=False, write_only=True, max_length=4096)
+
+
+class PasswordChangeResponseSerializer(serializers.Serializer[dict[str, Any]]):
+    """Returned only to mobile sessions: their token pair is re-issued."""
+
+    access = serializers.CharField()
+    refresh = serializers.CharField()
+
+
+class PasswordResetRequestSerializer(serializers.Serializer[dict[str, Any]]):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer[dict[str, Any]]):
+    uid = serializers.CharField(max_length=64, write_only=True)
+    token = serializers.CharField(max_length=128, write_only=True)
+    new_password = serializers.CharField(trim_whitespace=False, write_only=True, max_length=4096)
+
+
+class DetailSerializer(serializers.Serializer[dict[str, Any]]):
+    detail = serializers.CharField()
+
+
+class UserSessionSerializer(serializers.ModelSerializer[UserSession]):
+    current = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserSession
+        fields = [
+            "id",
+            "kind",
+            "created_at",
+            "last_seen_at",
+            "ip_address",
+            "user_agent",
+            "mfa_method",
+            "current",
+        ]
+        read_only_fields = fields
+
+    def get_current(self, obj: UserSession) -> bool:
+        current = self.context.get("current")
+        return bool(current is not None and current.pk == obj.pk)

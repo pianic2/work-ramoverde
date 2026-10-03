@@ -38,8 +38,11 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Staff sign-in page (React backoffice). Defaults to the first allowed web origin.
 STAFF_LOGIN_URL = os.getenv("STAFF_LOGIN_URL", f"{CORS_ALLOWED_ORIGINS[0]}/admin/login")
-if urlsplit(STAFF_LOGIN_URL).scheme != "https":
-    raise RuntimeError("STAFF_LOGIN_URL must use HTTPS in production")
+STAFF_PASSWORD_RESET_URL = os.getenv(
+    "STAFF_PASSWORD_RESET_URL", f"{CORS_ALLOWED_ORIGINS[0]}/admin/reset-password"
+)
+if any(urlsplit(url).scheme != "https" for url in (STAFF_LOGIN_URL, STAFF_PASSWORD_RESET_URL)):
+    raise RuntimeError("STAFF_LOGIN_URL and STAFF_PASSWORD_RESET_URL must use HTTPS in production")
 
 # WebAuthn is bound to the web origins (HTTPS) and their registrable domain.
 WEBAUTHN_ORIGINS = [

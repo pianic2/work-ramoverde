@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import mfa_views
+from . import mfa_views, security_views
 from .views import (
     CsrfView,
     CurrentUserView,
@@ -91,6 +91,39 @@ urlpatterns = [
         "auth/mfa/recovery-codes",
         mfa_views.RecoveryCodesView.as_view(),
         name="mfa-recovery-codes",
+    ),
+    # Passwords (WR-16).
+    path(
+        "auth/password/change",
+        security_views.PasswordChangeView.as_view(),
+        name="password-change",
+    ),
+    path(
+        "auth/password/reset",
+        security_views.PasswordResetRequestView.as_view(),
+        name="password-reset",
+    ),
+    path(
+        "auth/password/reset/confirm",
+        security_views.PasswordResetConfirmView.as_view(),
+        name="password-reset-confirm",
+    ),
+    # Sessions / devices (WR-16).
+    path("auth/sessions", security_views.SessionListView.as_view(), name="sessions"),
+    path(
+        "auth/sessions/revoke-others",
+        security_views.SessionRevokeOthersView.as_view(),
+        name="sessions-revoke-others",
+    ),
+    path(
+        "auth/sessions/revoke-all",
+        security_views.SessionRevokeAllView.as_view(),
+        name="sessions-revoke-all",
+    ),
+    path(
+        "auth/sessions/<int:pk>",
+        security_views.SessionRevokeView.as_view(),
+        name="session-revoke",
     ),
     path("users/me", CurrentUserView.as_view(), name="current-user"),
 ]

@@ -1,5 +1,7 @@
 import {
   ApiError,
+  postAuthPasswordChange,
+  postAuthSessionsRevokeAll,
   postAuthToken,
   postAuthTokenLogout,
   postAuthTokenMfaTotpConfirm,
@@ -67,6 +69,25 @@ export async function confirmTotpEnrollment(challenge: string, code: string): Pr
   const tokens = (await postAuthTokenMfaTotpConfirm({ challenge, code })).data;
   await storeTokens(tokens);
   return tokens.recovery_codes ?? [];
+}
+
+/** Change the (possibly expired) password; the server re-issues this device's tokens. */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const response = await postAuthPasswordChange({
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+  if (response.status === 200) await storeTokens(response.data);
+}
+
+/** Global logout: revoke every web session and mobile token of the account, then clear. */
+export async function signOutEverywhere(): Promise<void> {
+  try {
+    await postAuthSessionsRevokeAll();
+  } finally {
+    ++authGeneration;
+    await queueTokenWrite(clearTokens);
+  }
 }
 
 export function refreshSession(): Promise<string | null> {

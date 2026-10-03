@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   confirmTotpEnrollment: vi.fn(),
   enrollPasskey: vi.fn(),
   sessionLogout: vi.fn(async () => undefined),
+  logoutEverywhere: vi.fn(async () => undefined),
   me: { current: {} as Record<string, unknown> },
 }));
 

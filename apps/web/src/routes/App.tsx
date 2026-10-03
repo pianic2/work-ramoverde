@@ -1,4 +1,5 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { PasswordResetConfirm, PasswordResetRequest } from '../auth/PasswordPages';
 import { StaffHome } from '../auth/StaffHome';
 import { StaffLogin } from '../auth/StaffLogin';
 
@@ -24,6 +25,8 @@ export function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/admin/login" element={<StaffLogin />} />
+      <Route path="/admin/password-reset" element={<PasswordResetRequest />} />
+      <Route path="/admin/reset-password" element={<PasswordResetConfirm />} />
       <Route path="/admin" element={<StaffHome />} />
       <Route path="/account" element={<Navigate to="/admin" replace />} />
       <Route

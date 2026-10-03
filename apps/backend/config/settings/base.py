@@ -66,12 +66,6 @@ DATABASES = {
     )
 }
 AUTH_USER_MODEL = "accounts.User"
-AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
-]
 LANGUAGE_CODE = "it"
 TIME_ZONE = "Europe/Rome"
 USE_I18N = True
@@ -180,26 +174,23 @@ LOGGING = {
 
 # --- Staff authentication and security (owned by accounts/audit, WR-13…WR-18) ---------------
 # Web staff use Django sessions (HttpOnly cookie + CSRF); mobile uses JWT. Every staff request
-# must be backed by an active, tracked `accounts.UserSession`.
+# must be backed by an active, MFA-verified, tracked `accounts.UserSession`.
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
     "apps.accounts.authentication.StaffJWTAuthentication",
     "apps.accounts.authentication.StaffSessionAuthentication",
 ]
-# Mobile: 5-minute access tokens, rotating refresh tokens (old ones blacklisted, reuse revokes
-# the whole session), tokens invalidated by password changes, and an absolute session age.
-SIMPLE_JWT.update(
-    {
-        "CHECK_REVOKE_TOKEN": True,
-        "UPDATE_LAST_LOGIN": False,
-        "USER_AUTHENTICATION_RULE": "apps.accounts.auth_sessions.is_staff_account_active",
-    }
-)
-MOBILE_SESSION_MAX_AGE = timedelta(days=int(os.getenv("MOBILE_SESSION_MAX_AGE_DAYS", "30")))
-# Every staff endpoint requires an MFA-verified tracked session unless it opts out explicitly.
+# Every endpoint requires an MFA-verified staff session unless it opts out explicitly.
 REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = ["apps.accounts.permissions.IsStaffUser"]
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
     **REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],  # type: ignore[dict-item]
     "auth_mfa": "20/minute",
+    "auth_password": "10/hour",
+}
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"] = {
+    **SPECTACULAR_SETTINGS.get("ENUM_NAME_OVERRIDES", {}),  # type: ignore[dict-item]
+    "MfaMethodEnum": "apps.accounts.serializers.MFA_METHODS",
+    "MobileMfaMethodEnum": "apps.accounts.serializers.MOBILE_MFA_METHODS",
+    "AuthFlowStatusEnum": "apps.accounts.serializers.AUTH_FLOW_STATUSES",
 }
 # Shared cache (throttles, lockout, single-use MFA challenges) must be visible to every
 # worker: PostgreSQL-backed, table created by migration apps.core 0001.
@@ -209,6 +200,23 @@ CACHES = {
         "LOCATION": "django_cache",
     }
 }
+
+# Web sessions (WR-13). React backoffice sign-in page, used by Django admin and emails.
+STAFF_LOGIN_URL = os.getenv("STAFF_LOGIN_URL", "http://localhost:5180/admin/login")
+SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", str(8 * 60 * 60)))
+SESSION_COOKIE_NAME = "sessionid"
+
+# Mobile JWT (WR-14): 5-minute access tokens, rotating refresh tokens (old ones blacklisted,
+# reuse revokes the session), tokens invalidated by password changes, absolute session age.
+SIMPLE_JWT.update(
+    {
+        "CHECK_REVOKE_TOKEN": True,
+        "UPDATE_LAST_LOGIN": False,
+        "USER_AUTHENTICATION_RULE": "apps.accounts.auth_sessions.is_staff_account_active",
+    }
+)
+MOBILE_SESSION_MAX_AGE = timedelta(days=int(os.getenv("MOBILE_SESSION_MAX_AGE_DAYS", "30")))
+
 # MFA (WR-15): mandatory for every staff account. WebAuthn preferred, TOTP fallback.
 MFA_SECRET_KEY = os.getenv("MFA_SECRET_KEY", SECRET_KEY)
 MFA_ISSUER = "RamoVerde"
@@ -217,22 +225,33 @@ STEP_UP_MAX_AGE = timedelta(minutes=int(os.getenv("STEP_UP_MAX_AGE_MINUTES", "5"
 WEBAUTHN_RP_ID = os.getenv("WEBAUTHN_RP_ID", "localhost")
 WEBAUTHN_RP_NAME = "RamoVerde"
 WEBAUTHN_ORIGINS = [
-    value
-    for value in os.getenv("WEBAUTHN_ORIGINS", "http://localhost:5180,http://localhost:5173").split(
-        ","
-    )
-    if value
+    origin for origin in os.getenv("WEBAUTHN_ORIGINS", "http://localhost:5180").split(",") if origin
 ]
-SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"] = {
-    **SPECTACULAR_SETTINGS.get("ENUM_NAME_OVERRIDES", {}),  # type: ignore[dict-item]
-    "MfaMethodEnum": "apps.accounts.serializers.MFA_METHODS",
-    "MobileMfaMethodEnum": "apps.accounts.serializers.MOBILE_MFA_METHODS",
-    "AuthFlowStatusEnum": "apps.accounts.serializers.AUTH_FLOW_STATUSES",
-}
+
+# Password policy (WR-16).
+PASSWORD_MAX_AGE_DAYS = int(os.getenv("PASSWORD_MAX_AGE_DAYS", "30"))
+PASSWORD_HISTORY_COUNT = 5
+PASSWORD_RESET_TIMEOUT = 30 * 60  # seconds; reset links are single use (hash-bound)
+STAFF_PASSWORD_RESET_URL = os.getenv(
+    "STAFF_PASSWORD_RESET_URL", STAFF_LOGIN_URL.replace("/admin/login", "/admin/reset-password")
+)
+AUTH_PASSWORD_VALIDATORS: list[dict[str, Any]] = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 12},
+    },
+    {"NAME": "apps.accounts.password_validation.MaximumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": "apps.accounts.password_validation.PasswordHistoryValidator",
+        "OPTIONS": {"history": PASSWORD_HISTORY_COUNT},
+    },
+]
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "RamoVerde <no-reply@localhost>")
+
+# Brute force (WR-15/WR-18): progressive per-account lockout.
 AUTH_LOCKOUT_THRESHOLD = 5
 AUTH_LOCKOUT_BASE_SECONDS = 60
 AUTH_LOCKOUT_MAX_SECONDS = 60 * 60
-# Where Django admin and password-reset emails send people to sign in (React backoffice).
-STAFF_LOGIN_URL = os.getenv("STAFF_LOGIN_URL", "http://localhost:5180/admin/login")
-SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", str(8 * 60 * 60)))
-SESSION_COOKIE_NAME = "sessionid"

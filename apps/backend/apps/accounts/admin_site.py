@@ -22,6 +22,8 @@ class StaffAdminSite(admin.AdminSite):
         user = request.user
         if not (user.is_active and user.is_staff and user.is_superuser):
             return False
+        if user.password_expired:
+            return False
         return active_web_session(request) is not None
 
     def login(self, request: HttpRequest, extra_context: Any = None) -> HttpResponse:

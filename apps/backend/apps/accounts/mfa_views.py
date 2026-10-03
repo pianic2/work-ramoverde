@@ -309,6 +309,7 @@ class MfaStatusView(APIView):
 @method_decorator(never_cache, name="dispatch")
 class StepUpView(APIView):
     permission_classes = [IsStaffUser]
+    allow_expired_password = True
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "auth_mfa"
 
@@ -343,6 +344,8 @@ class StepUpView(APIView):
 
 
 class StepUpWebAuthnOptionsView(APIView):
+    allow_expired_password = True
+
     @extend_schema(
         operation_id="postAuthStepUpWebauthnOptions",
         request=None,

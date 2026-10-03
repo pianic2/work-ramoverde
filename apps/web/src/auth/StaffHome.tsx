@@ -1,20 +1,20 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiError, useGetUsersMe } from '@ramoverde/api-client';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { sessionLogout } from './session';
+import { ExpiredPasswordForm } from './PasswordPages';
+import { logoutEverywhere, sessionLogout } from './session';
 
 /** Backoffice landing (Sprint 2 builds the real UI). Authorization stays server-side. */
 export function StaffHome() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const account = useGetUsersMe({ query: { retry: false } });
-  const logout = useMutation({
-    mutationFn: sessionLogout,
-    onSettled: async () => {
-      queryClient.clear();
-      navigate('/admin/login', { replace: true });
-    },
-  });
+  const leave = async () => {
+    queryClient.clear();
+    navigate('/admin/login', { replace: true });
+  };
+  const logout = useMutation({ mutationFn: sessionLogout, onSettled: leave });
+  const logoutAll = useMutation({ mutationFn: logoutEverywhere, onSettled: leave });
 
   if (account.isPending) return <p className="shell">Caricamento…</p>;
   if (account.isError) {
@@ -28,6 +28,7 @@ export function StaffHome() {
     );
   }
 
+  const user = account.data?.data;
   return (
     <main className="shell">
       <header>
@@ -36,10 +37,28 @@ export function StaffHome() {
       <section className="hero">
         <p className="eyebrow">BACKOFFICE</p>
         <h1>Area staff</h1>
-        <p className="lede">Accesso effettuato come {account.data?.data.email}</p>
-        <button className="web-button" onClick={() => logout.mutate()} disabled={logout.isPending}>
-          Esci
-        </button>
+        <p className="lede">Accesso effettuato come {user?.email}</p>
+        {user?.password_change_required ? (
+          <ExpiredPasswordForm
+            onChanged={() => queryClient.invalidateQueries({ queryKey: account.queryKey })}
+          />
+        ) : null}
+        <div className="actions">
+          <button
+            className="web-button"
+            onClick={() => logout.mutate()}
+            disabled={logout.isPending}
+          >
+            Esci
+          </button>
+          <button
+            className="link-button"
+            onClick={() => logoutAll.mutate()}
+            disabled={logoutAll.isPending}
+          >
+            Esci da tutti i dispositivi
+          </button>
+        </div>
       </section>
     </main>
   );

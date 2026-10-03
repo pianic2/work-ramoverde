@@ -103,6 +103,7 @@ export function StaffLogin() {
         <button className="web-button" disabled={busy}>
           {busy ? 'Verifica in corso…' : 'Continua'}
         </button>
+        <Link to="/admin/password-reset">Password dimenticata?</Link>
       </form>
     );
   } else if (step.kind === 'verify') {

@@ -223,6 +223,31 @@ def revoke_session(tracked: UserSession, reason: str) -> None:
         Session.objects.filter(session_key=tracked.session_key).delete()
 
 
+def revoke_all_sessions(user: User, reason: str, keep: UserSession | None = None) -> int:
+    """Revoke every active session of the user except `keep` (web and mobile).
+
+    Outstanding refresh tokens are blacklisted too unless the kept session is a mobile
+    one (its rotating refresh token must survive; the others are dead through `sid`).
+    """
+    active = UserSession.objects.filter(user=user, revoked_at__isnull=True)
+    if keep is not None:
+        active = active.exclude(pk=keep.pk)
+    revoked = 0
+    for tracked in active:
+        revoke_session(tracked, reason=reason)
+        revoked += 1
+    if keep is None or keep.kind != UserSession.Kind.MOBILE:
+        blacklist_refresh_tokens(user)
+    return revoked
+
+
+def reissue_mobile_tokens(tracked: UserSession) -> dict[str, str]:
+    """New token pair for an existing mobile session (e.g. after its password changed)."""
+    refresh = RefreshToken.for_user(tracked.user)
+    refresh[SESSION_CLAIM] = tracked.pk
+    return {"access": str(refresh.access_token), "refresh": str(refresh)}
+
+
 def blacklist_refresh_tokens(user: User) -> None:
     """Blacklist every outstanding refresh token of the user (defence in depth on top of
     session revocation, which already makes `sid`-bound tokens unusable)."""

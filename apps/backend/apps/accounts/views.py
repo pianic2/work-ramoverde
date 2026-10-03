@@ -60,6 +60,8 @@ def verify_staff_credentials(request: Request, data: dict[str, Any], channel: st
             metadata={"channel": channel},
         )
         raise AuthenticationFailed(INVALID_CREDENTIALS)
+    if user.password_expired:
+        record_event("password.expired", request=request, actor=user, target=user)
     record_event(
         "auth.login.password_verified",
         request=request,
@@ -80,6 +82,8 @@ def _mobile_methods(user: User) -> list[str]:
 
 
 class CurrentUserView(APIView):
+    allow_expired_password = True  # clients learn here that a change is required
+
     @extend_schema(operation_id="getUsersMe", responses=UserSerializer)
     def get(self, request: Request) -> Response:
         user = cast(User, request.user)
@@ -174,6 +178,7 @@ class SessionLoginView(PublicAuthView):
 @method_decorator(csrf_protect, name="dispatch")
 class SessionLogoutView(APIView):
     authentication_classes = [StaffSessionAuthentication]
+    allow_expired_password = True
 
     @extend_schema(operation_id="postAuthSessionLogout", request=None, responses={204: None})
     def post(self, request: Request) -> Response:

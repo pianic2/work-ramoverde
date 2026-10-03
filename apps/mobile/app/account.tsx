@@ -13,9 +13,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Linking } from 'react-native';
 import {
+  changePassword,
   completeSignIn,
   confirmTotpEnrollment,
   signOut,
+  signOutEverywhere,
   startSignIn,
   startTotpEnrollment,
 } from '../src/auth/tokens';
@@ -27,6 +29,8 @@ type Step =
   | { kind: 'recovery-codes'; codes: string[] };
 
 const GENERIC_ERROR = 'Accesso non riuscito. Verifica i dati inseriti e riprova.';
+const PASSWORD_ERROR =
+  'Cambio password non riuscito: controlla la password attuale e scegline una nuova di almeno 12 caratteri, non usata di recente.';
 const CODE_ERROR = 'Codice non valido o scaduto. Riprova, oppure ricomincia l’accesso.';
 
 /**
@@ -39,6 +43,7 @@ export default function AccountScreen() {
   const [step, setStep] = useState<Step>({ kind: 'password' });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -62,18 +67,53 @@ export default function AccountScreen() {
   }
 
   if (account.isSuccess && step.kind !== 'recovery-codes') {
+    const reset = () => queryClient.resetQueries({ queryKey: account.queryKey });
     return (
       <Column gap="md" style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
         <Heading level={1}>Il tuo account</Heading>
         <Box padding="md" radius="md" bg="surface">
           <Text>Accesso effettuato come {account.data.data.email}</Text>
         </Box>
+        {account.data.data.password_change_required ? (
+          <>
+            <Heading level={2}>Cambia la password</Heading>
+            <Text>La tua password è scaduta: per continuare scegline una nuova.</Text>
+            <PasswordInput
+              label="Password attuale"
+              autoComplete="password"
+              value={password}
+              onChangeText={setPassword}
+            />
+            <PasswordInput
+              label="Nuova password"
+              autoComplete="password-new"
+              helperText="Almeno 12 caratteri; puoi usare una frase lunga."
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+            <Button
+              label="Aggiorna password"
+              disabled={busy}
+              onPress={() =>
+                void run(async () => {
+                  try {
+                    await changePassword(password, newPassword);
+                    await queryClient.invalidateQueries({ queryKey: account.queryKey });
+                  } finally {
+                    setPassword('');
+                    setNewPassword('');
+                  }
+                }, PASSWORD_ERROR)
+              }
+            />
+            {error ? <Text accessibilityRole="alert">{error}</Text> : null}
+          </>
+        ) : null}
+        <Button label="Esci" variant="secondary" onPress={() => void signOut().finally(reset)} />
         <Button
-          label="Esci"
+          label="Esci da tutti i dispositivi"
           variant="secondary"
-          onPress={() =>
-            void signOut().finally(() => queryClient.resetQueries({ queryKey: account.queryKey }))
-          }
+          onPress={() => void signOutEverywhere().finally(reset)}
         />
       </Column>
     );

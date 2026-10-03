@@ -1,4 +1,6 @@
 import {
+  postAuthPasswordChange,
+  postAuthSessionsRevokeAll,
   postAuthToken,
   postAuthTokenLogout,
   postAuthTokenMfaTotpConfirm,
@@ -7,15 +9,19 @@ import {
 } from '@ramoverde/api-client';
 import * as SecureStore from 'expo-secure-store';
 import {
+  changePassword,
   completeSignIn,
   confirmTotpEnrollment,
   refreshSession,
   signOut,
+  signOutEverywhere,
   startSignIn,
 } from '../src/auth/tokens';
 
 jest.mock('@ramoverde/api-client', () => ({
   ApiError: class ApiError extends Error {},
+  postAuthPasswordChange: jest.fn(),
+  postAuthSessionsRevokeAll: jest.fn(),
   postAuthToken: jest.fn(),
   postAuthTokenLogout: jest.fn(),
   postAuthTokenMfaTotpConfirm: jest.fn(),
@@ -149,4 +155,31 @@ it('returns recovery codes from enrollment without persisting them', async () =>
   const codes = await confirmTotpEnrollment('signed-challenge', '123456');
   expect(codes).toEqual(['AAAAA-BBBBB']);
   expect([...stored.values()]).toEqual(['a', 'r']);
+});
+
+it('stores the re-issued token pair after a password change', async () => {
+  await signIn('op@example.com', 'password');
+  jest.mocked(postAuthPasswordChange).mockResolvedValue({
+    status: 200,
+    data: { access: 'new-access', refresh: 'new-refresh' },
+  } as Awaited<ReturnType<typeof postAuthPasswordChange>>);
+  jest.mocked(postAuthTokenMfaVerify).mockResolvedValue(tokenResponse('a', 'r'));
+  await changePassword('old-pass-phrase', 'new-pass-phrase-2026');
+  expect(postAuthPasswordChange).toHaveBeenCalledWith({
+    current_password: 'old-pass-phrase',
+    new_password: 'new-pass-phrase-2026',
+  });
+  expect(stored.get('ramoverde.access-token')).toBe('new-access');
+  expect(stored.get('ramoverde.refresh-token')).toBe('new-refresh');
+});
+
+it('global logout revokes every session server-side and clears local tokens', async () => {
+  jest.mocked(postAuthTokenMfaVerify).mockResolvedValue(tokenResponse('a', 'r'));
+  await signIn('op@example.com', 'password');
+  jest
+    .mocked(postAuthSessionsRevokeAll)
+    .mockResolvedValue({} as Awaited<ReturnType<typeof postAuthSessionsRevokeAll>>);
+  await signOutEverywhere();
+  expect(postAuthSessionsRevokeAll).toHaveBeenCalledTimes(1);
+  expect(stored.size).toBe(0);
 });

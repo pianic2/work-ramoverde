@@ -167,6 +167,85 @@ paths:
               schema:
                 $ref: '#/components/schemas/MfaStatus'
           description: ''
+  /api/v1/auth/password/change:
+    post:
+      operationId: postAuthPasswordChange
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordChangeResponse'
+          description: 'Mobile: new token pair.'
+        '204':
+          description: 'Web: session kept, other sessions revoked.'
+  /api/v1/auth/password/reset:
+    post:
+      operationId: postAuthPasswordReset
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/auth/password/reset/confirm:
+    post:
+      operationId: postAuthPasswordResetConfirm
+      description: 'Sets the new password. Does not sign in: MFA is required at next
+        sign-in.'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/auth/session/login:
     post:
       operationId: postAuthSessionLogin
@@ -336,6 +415,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/SessionAuthFlow'
           description: ''
+  /api/v1/auth/sessions:
+    get:
+      operationId: getAuthSessions
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSession'
+          description: ''
+  /api/v1/auth/sessions/{id}:
+    delete:
+      operationId: deleteAuthSession
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/sessions/revoke-all:
+    post:
+      operationId: postAuthSessionsRevokeAll
+      description: 'Global logout: every web session and every mobile refresh token,
+        this one included.'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/sessions/revoke-others:
+    post:
+      operationId: postAuthSessionsRevokeOthers
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/auth/step-up:
     post:
       operationId: postAuthStepUp
@@ -613,6 +750,21 @@ components:
           type: string
       required:
       - csrfToken
+    Detail:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    KindEnum:
+      enum:
+      - web
+      - mobile
+      type: string
+      description: |-
+        * `web` - Web
+        * `mobile` - Mobile
     MfaMethodEnum:
       enum:
       - totp
@@ -764,6 +916,58 @@ components:
       required:
       - challenge
       - code
+    PasswordChange:
+      type: object
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+          maxLength: 4096
+        new_password:
+          type: string
+          writeOnly: true
+          maxLength: 4096
+      required:
+      - current_password
+      - new_password
+    PasswordChangeResponse:
+      type: object
+      description: 'Returned only to mobile sessions: their token pair is re-issued.'
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    PasswordResetConfirm:
+      type: object
+      properties:
+        uid:
+          type: string
+          writeOnly: true
+          maxLength: 64
+        token:
+          type: string
+          writeOnly: true
+          maxLength: 128
+        new_password:
+          type: string
+          writeOnly: true
+          maxLength: 4096
+      required:
+      - new_password
+      - token
+      - uid
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
     RecoveryCodes:
       type: object
       properties:
@@ -849,11 +1053,61 @@ components:
           type: string
           readOnly: true
           title: Cognome
+        password_change_required:
+          type: boolean
+          readOnly: true
+        password_expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - email
       - first_name
       - id
       - last_name
+      - password_change_required
+      - password_expires_at
+    UserSession:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        ip_address:
+          type: string
+          readOnly: true
+          nullable: true
+        user_agent:
+          type: string
+          readOnly: true
+        mfa_method:
+          type: string
+          readOnly: true
+        current:
+          type: boolean
+          readOnly: true
+      required:
+      - created_at
+      - current
+      - id
+      - ip_address
+      - kind
+      - last_seen_at
+      - mfa_method
+      - user_agent
     WebAuthnCredential:
       type: object
       properties:

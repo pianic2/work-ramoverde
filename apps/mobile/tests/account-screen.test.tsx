@@ -10,6 +10,8 @@ jest.mock('../src/auth/tokens', () => ({
   startTotpEnrollment: jest.fn(),
   confirmTotpEnrollment: jest.fn(),
   signOut: jest.fn(),
+  signOutEverywhere: jest.fn(),
+  changePassword: jest.fn(),
 }));
 const me: { current: Record<string, unknown> } = {
   current: { isPending: false, isSuccess: false },
@@ -91,4 +93,26 @@ it('shows the signed-in account in Italian with sign-out', () => {
   renderScreen();
   expect(screen.getByText('Accesso effettuato come op@example.com')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Esci' })).toBeTruthy();
+});
+
+it('requires an expired password to be changed and offers global logout', async () => {
+  me.current = {
+    isPending: false,
+    isSuccess: true,
+    data: { data: { email: 'op@example.com', password_change_required: true } },
+  };
+  jest.mocked(auth.changePassword).mockResolvedValue();
+  jest.mocked(auth.signOutEverywhere).mockResolvedValue();
+  renderScreen();
+  expect(
+    screen.getByText('La tua password è scaduta: per continuare scegline una nuova.'),
+  ).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Password attuale'), 'old-pass-phrase');
+  fireEvent.changeText(screen.getByLabelText('Nuova password'), 'new-pass-phrase-2026');
+  fireEvent.press(screen.getByRole('button', { name: 'Aggiorna password' }));
+  await waitFor(() =>
+    expect(auth.changePassword).toHaveBeenCalledWith('old-pass-phrase', 'new-pass-phrase-2026'),
+  );
+  fireEvent.press(screen.getByRole('button', { name: 'Esci da tutti i dispositivi' }));
+  await waitFor(() => expect(auth.signOutEverywhere).toHaveBeenCalledTimes(1));
 });

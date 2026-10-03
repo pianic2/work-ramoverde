@@ -1,5 +1,9 @@
 import {
   getAuthCsrf,
+  postAuthPasswordChange,
+  postAuthPasswordReset,
+  postAuthPasswordResetConfirm,
+  postAuthSessionsRevokeAll,
   postAuthSessionLogin,
   postAuthSessionLogout,
   postAuthSessionMfaTotpConfirm,
@@ -61,4 +65,31 @@ export async function enrollPasskey(name: string): Promise<SessionAuthFlow> {
 
 export async function sessionLogout(): Promise<void> {
   await postAuthSessionLogout(await csrfHeaders());
+}
+
+/** Global logout: every browser session and every mobile refresh token of this account. */
+export async function logoutEverywhere(): Promise<void> {
+  await postAuthSessionsRevokeAll(await csrfHeaders());
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await postAuthPasswordChange(
+    { current_password: currentPassword, new_password: newPassword },
+    await csrfHeaders(),
+  );
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await postAuthPasswordReset({ email }, await csrfHeaders());
+}
+
+export async function confirmPasswordReset(
+  uid: string,
+  token: string,
+  newPassword: string,
+): Promise<void> {
+  await postAuthPasswordResetConfirm(
+    { uid, token, new_password: newPassword },
+    await csrfHeaders(),
+  );
 }

@@ -1,8 +1,23 @@
 import { render, screen } from '@testing-library/react-native';
-import { Box, Button, Column, Text, ThemeProvider } from '@personal-library/react-native-components';
+import {
+  Box,
+  Button,
+  Column,
+  Text,
+  ThemeProvider,
+} from '@personal-library/react-native-components';
 
 function LibrarySurface() {
-  return <ThemeProvider><Column gap="sm"><Box padding="md" radius="md" bg="surface"><Text>Library rendered</Text></Box><Button label="Continue" onPress={() => undefined} /></Column></ThemeProvider>;
+  return (
+    <ThemeProvider>
+      <Column gap="sm">
+        <Box padding="md" radius="md" bg="surface">
+          <Text>Library rendered</Text>
+        </Box>
+        <Button label="Continue" onPress={() => undefined} />
+      </Column>
+    </ThemeProvider>
+  );
 }
 
 describe('personal component library integration', () => {

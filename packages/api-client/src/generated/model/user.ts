@@ -11,4 +11,7 @@ export interface User {
   readonly email: string;
   readonly first_name: string;
   readonly last_name: string;
+  readonly password_change_required: boolean;
+  /** @nullable */
+  readonly password_expires_at: string | null;
 }

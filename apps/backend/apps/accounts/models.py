@@ -1,8 +1,11 @@
+from datetime import datetime, timedelta
 from typing import Any
 
+from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager["User"]):
@@ -38,7 +41,40 @@ class User(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
+    # Set on every password change; null means unknown age and is treated as expired.
+    password_changed_at = models.DateTimeField(null=True, blank=True)
+
     objects = UserManager()  # type: ignore[assignment,misc]
+
+    def set_password(self, raw_password: str | None) -> None:
+        super().set_password(raw_password)
+        self.password_changed_at = timezone.now()
+
+    @property
+    def password_expires_at(self) -> datetime | None:
+        if self.password_changed_at is None:
+            return None
+        return self.password_changed_at + timedelta(days=settings.PASSWORD_MAX_AGE_DAYS)
+
+    @property
+    def password_expired(self) -> bool:
+        """Mandatory change every PASSWORD_MAX_AGE_DAYS (default 30)."""
+        expires_at = self.password_expires_at
+        return expires_at is None or timezone.now() >= expires_at
+
+
+class PasswordHistory(models.Model):
+    """Previous password hashes (Django hasher format) used to prevent reuse."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_history")
+    password_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self) -> str:
+        return f"Password history {self.pk}"
 
 
 class UserSession(models.Model):
