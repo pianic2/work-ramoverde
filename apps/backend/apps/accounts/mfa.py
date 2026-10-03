@@ -134,6 +134,13 @@ def remove_totp(user: User) -> None:
     TOTPDevice.objects.filter(user=user).delete()
 
 
+def remove_all_factors(user: User) -> None:
+    """Administrative reset: the user must enroll MFA again at next sign-in."""
+    TOTPDevice.objects.filter(user=user).delete()
+    WebAuthnCredential.objects.filter(user=user).delete()
+    RecoveryCode.objects.filter(user=user).delete()
+
+
 # --- Recovery codes ----------------------------------------------------------------------
 
 

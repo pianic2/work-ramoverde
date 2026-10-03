@@ -23,6 +23,7 @@ from .authentication import StaffSessionAuthentication
 from .models import User
 from .serializers import (
     CsrfTokenSerializer,
+    CurrentUserSerializer,
     MobileAuthFlowSerializer,
     MobileCredentialsSerializer,
     MobileLogoutSerializer,
@@ -30,7 +31,6 @@ from .serializers import (
     MobileTokenResponseSerializer,
     SessionAuthFlowSerializer,
     SessionLoginSerializer,
-    UserSerializer,
 )
 
 # One message for every failure so responses never reveal whether an account exists.
@@ -84,10 +84,10 @@ def _mobile_methods(user: User) -> list[str]:
 class CurrentUserView(APIView):
     allow_expired_password = True  # clients learn here that a change is required
 
-    @extend_schema(operation_id="getUsersMe", responses=UserSerializer)
+    @extend_schema(operation_id="getUsersMe", responses=CurrentUserSerializer)
     def get(self, request: Request) -> Response:
         user = cast(User, request.user)
-        return Response(UserSerializer(user).data)
+        return Response(CurrentUserSerializer(user).data)
 
 
 @method_decorator(never_cache, name="dispatch")

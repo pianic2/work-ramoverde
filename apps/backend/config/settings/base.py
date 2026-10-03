@@ -255,6 +255,7 @@ SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"] = {
     "MfaMethodEnum": "apps.accounts.serializers.MFA_METHODS",
     "MobileMfaMethodEnum": "apps.accounts.serializers.MOBILE_MFA_METHODS",
     "AuthFlowStatusEnum": "apps.accounts.serializers.AUTH_FLOW_STATUSES",
+    "RoleEnum": "apps.accounts.staff_views.ROLE_CHOICES",
 }
 # Shared cache (throttles, lockout, single-use MFA challenges) must be visible to every
 # worker: PostgreSQL-backed, table created by migration apps.core 0001.

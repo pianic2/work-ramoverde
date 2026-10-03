@@ -81,23 +81,32 @@ def request_reset(request: Any, email: str) -> None:
     digest = hashlib.sha256(user.email.lower().encode()).hexdigest()
     if not cache.add(f"password-reset-mail:{digest}", True, RESET_EMAIL_INTERVAL_SECONDS):
         return
+    send_password_link(user, invite=False)
+    record_event("password.reset.request", request=request, actor=user, target=user)
+
+
+def send_password_link(user: User, *, invite: bool) -> None:
+    """Email a single-use link to set the password (reset, or first access of a new account)."""
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     link = f"{settings.STAFF_PASSWORD_RESET_URL}?uid={uid}&token={token}"
     minutes = settings.PASSWORD_RESET_TIMEOUT // 60
+    intro = (
+        "È stato creato il tuo account staff RamoVerde. Scegli la tua password"
+        if invite
+        else "È stata richiesta la reimpostazione della password del tuo account staff RamoVerde"
+    )
     send_mail(
-        subject="RamoVerde — reimposta la password",
+        subject="RamoVerde — " + ("attiva il tuo account" if invite else "reimposta la password"),
         message=(
-            "È stata richiesta la reimpostazione della password del tuo account staff "
-            "RamoVerde.\n\n"
+            f"{intro}.\n\n"
             f"Apri questo collegamento entro {minutes} minuti (vale una sola volta):\n{link}\n\n"
-            "Dopo la reimpostazione dovrai accedere di nuovo con la verifica in due passaggi. "
-            "Se non sei stato tu, ignora questo messaggio e avvisa l'amministratore."
+            "Al primo accesso configurerai la verifica in due passaggi, obbligatoria per lo staff. "
+            "Se non ti aspettavi questo messaggio, ignoralo e avvisa l'amministratore."
         ),
         from_email=None,
         recipient_list=[user.email],
     )
-    record_event("password.reset.request", request=request, actor=user, target=user)
 
 
 def confirm_reset(request: Any, uid: str, token: str, new: str) -> None:

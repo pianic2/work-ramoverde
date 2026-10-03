@@ -46,6 +46,15 @@ class User(AbstractUser):
 
     objects = UserManager()  # type: ignore[assignment,misc]
 
+    class Meta:
+        verbose_name = "user"
+        verbose_name_plural = "users"
+        permissions = [
+            ("assign_role", "Can assign RBAC roles to staff accounts"),
+            ("deactivate_user", "Can deactivate staff accounts"),
+            ("manage_user_security", "Can manage other staff members' sessions and MFA"),
+        ]
+
     def set_password(self, raw_password: str | None) -> None:
         super().set_password(raw_password)
         self.password_changed_at = timezone.now()

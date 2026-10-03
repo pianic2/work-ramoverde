@@ -30,6 +30,26 @@ class UserSerializer(serializers.ModelSerializer[User]):
         read_only_fields = fields
 
 
+class CurrentUserSerializer(UserSerializer):
+    """`/users/me`: role and effective permissions are UI hints only; the API enforces."""
+
+    role = serializers.SerializerMethodField()
+    permissions = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = [*UserSerializer.Meta.fields, "role", "permissions"]
+        read_only_fields = fields
+
+    def get_role(self, obj: User) -> str | None:
+        from .rbac import get_role
+
+        role = get_role(obj)
+        return role.value if role else None
+
+    def get_permissions(self, obj: User) -> list[str]:
+        return sorted(obj.get_all_permissions())
+
+
 class SessionLoginSerializer(serializers.Serializer[dict[str, Any]]):
     email = serializers.EmailField()
     password = serializers.CharField(trim_whitespace=False, write_only=True, max_length=4096)

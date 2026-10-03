@@ -1573,6 +1573,139 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicSiteSettings'
           description: ''
+  /api/v1/roles:
+    get:
+      operationId: getRoles
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+          description: ''
+  /api/v1/users:
+    get:
+      operationId: getUsers
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffUser'
+          description: ''
+    post:
+      operationId: postUsers
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+  /api/v1/users/{id}/deactivate:
+    post:
+      operationId: postUserDeactivate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/users/{id}/role:
+    post:
+      operationId: postUserRole
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoleAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoleAssignment'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+  /api/v1/users/{id}/security-reset:
+    post:
+      operationId: postUserSecurityReset
+      description: |-
+        Incident response / lost device: revoke everything and force a fresh onboarding.
+
+        Revokes all sessions and refresh tokens, removes every second factor and recovery
+        code, makes the password unusable and emails a single-use link: the owner must set a
+        new password and enroll MFA again before any access.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/users/me:
     get:
       operationId: getUsersMe
@@ -1586,7 +1719,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/CurrentUser'
           description: ''
 components:
   schemas:
@@ -1617,6 +1750,52 @@ components:
           type: string
       required:
       - csrfToken
+    CurrentUser:
+      type: object
+      description: '`/users/me`: role and effective permissions are UI hints only;
+        the API enforces.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+          title: Nome
+        last_name:
+          type: string
+          readOnly: true
+          title: Cognome
+        password_change_required:
+          type: boolean
+          readOnly: true
+        password_expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        role:
+          type: string
+          nullable: true
+          readOnly: true
+        permissions:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - email
+      - first_name
+      - id
+      - last_name
+      - password_change_required
+      - password_expires_at
+      - permissions
+      - role
     Detail:
       type: object
       properties:
@@ -2695,6 +2874,44 @@ components:
             type: string
       required:
       - recovery_codes
+    Role:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/RoleEnum'
+        display_name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+      required:
+      - code
+      - display_name
+      - permissions
+    RoleAssignment:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - role
+    RoleEnum:
+      enum:
+      - SUPERADMIN
+      - ADMIN
+      - MANAGER
+      - TECHNICIAN
+      - OPERATOR
+      - CONTENT_EDITOR
+      type: string
+      description: |-
+        * `SUPERADMIN` - Super amministratore
+        * `ADMIN` - Amministratore
+        * `MANAGER` - Responsabile
+        * `TECHNICIAN` - Tecnico
+        * `OPERATOR` - Operatore
+        * `CONTENT_EDITOR` - Redattore contenuti
     SEOSettings:
       type: object
       properties:
@@ -2831,6 +3048,67 @@ components:
           nullable: true
       required:
       - updated_at
+    StaffCreate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          default: ''
+          maxLength: 150
+        last_name:
+          type: string
+          default: ''
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - role
+    StaffUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+          title: Nome
+        last_name:
+          type: string
+          readOnly: true
+          title: Cognome
+        role:
+          type: string
+          nullable: true
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Attivo
+          description: Stabilisce se l'utente debba essere considerato attivo. Deseleziona
+            qui, piuttosto che cancellare gli account.
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Ultimo accesso
+      required:
+      - email
+      - first_name
+      - id
+      - is_active
+      - last_login
+      - last_name
+      - role
     StepUpResponse:
       type: object
       properties:

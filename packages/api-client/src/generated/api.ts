@@ -23,6 +23,7 @@ import type {
 
 import type {
   CsrfToken,
+  CurrentUser,
   Detail,
   GetHealthLive200,
   GetHealthReady200,
@@ -66,16 +67,19 @@ import type {
   PublicPage,
   PublicSiteSettings,
   RecoveryCodes,
+  Role,
+  RoleAssignment,
   SEOSettings,
   SectionOrder,
   SectionSchema,
   SessionAuthFlow,
   SessionLogin,
   SiteSettings,
+  StaffCreate,
+  StaffUser,
   StepUpResponse,
   TotpConfirm,
   TotpSetup,
-  User,
   UserSession,
   WebAuthnOptions,
   WebAuthnRegister,
@@ -8049,8 +8053,614 @@ export function useGetPublicSiteSettings<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export type getRolesResponse200 = {
+  data: Role[];
+  status: 200;
+};
+
+export type getRolesResponseSuccess = getRolesResponse200 & {
+  headers: Headers;
+};
+export type getRolesResponse = getRolesResponseSuccess;
+
+export const getGetRolesUrl = () => {
+  return `/api/v1/roles`;
+};
+
+export const getRoles = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getRolesResponse> => {
+  return customFetch<getRolesResponse>(getGetRolesUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetRolesQueryKey = () => {
+  return [`/api/v1/roles`] as const;
+};
+
+export const getGetRolesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRoles>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoles>>, TError, TData>>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRolesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRoles>>> = ({ signal }) =>
+    getRoles({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRoles>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetRolesQueryResult = NonNullable<Awaited<ReturnType<typeof getRoles>>>;
+export type GetRolesQueryError = unknown;
+
+export function useGetRoles<TData = Awaited<ReturnType<typeof getRoles>>, TError = unknown>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoles>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getRoles>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetRoles<TData = Awaited<ReturnType<typeof getRoles>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoles>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getRoles>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetRoles<TData = Awaited<ReturnType<typeof getRoles>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoles>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetRoles<TData = Awaited<ReturnType<typeof getRoles>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoles>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetRolesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type getUsersResponse200 = {
+  data: StaffUser[];
+  status: 200;
+};
+
+export type getUsersResponseSuccess = getUsersResponse200 & {
+  headers: Headers;
+};
+export type getUsersResponse = getUsersResponseSuccess;
+
+export const getGetUsersUrl = () => {
+  return `/api/v1/users`;
+};
+
+export const getUsers = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getUsersResponse> => {
+  return customFetch<getUsersResponse>(getGetUsersUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetUsersQueryKey = () => {
+  return [`/api/v1/users`] as const;
+};
+
+export const getGetUsersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUsers>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetUsersQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getUsers>>> = ({ signal }) =>
+    getUsers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUsers>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetUsersQueryResult = NonNullable<Awaited<ReturnType<typeof getUsers>>>;
+export type GetUsersQueryError = unknown;
+
+export function useGetUsers<TData = Awaited<ReturnType<typeof getUsers>>, TError = unknown>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUsers>>,
+          TError,
+          Awaited<ReturnType<typeof getUsers>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetUsers<TData = Awaited<ReturnType<typeof getUsers>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUsers>>,
+          TError,
+          Awaited<ReturnType<typeof getUsers>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetUsers<TData = Awaited<ReturnType<typeof getUsers>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetUsers<TData = Awaited<ReturnType<typeof getUsers>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetUsersQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type postUsersResponse201 = {
+  data: StaffUser;
+  status: 201;
+};
+
+export type postUsersResponseSuccess = postUsersResponse201 & {
+  headers: Headers;
+};
+export type postUsersResponse = postUsersResponseSuccess;
+
+export const getPostUsersUrl = () => {
+  return `/api/v1/users`;
+};
+
+export const postUsers = async (
+  staffCreate: StaffCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postUsersResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postUsersResponse>(getPostUsersUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(staffCreate),
+  });
+};
+
+export const getPostUsersMutationKey = () => ['postUsers'] as const;
+
+export const getPostUsersMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postUsers>>,
+    TError,
+    PostUsersMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postUsers>>,
+  TError,
+  PostUsersMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostUsersMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postUsers>>,
+    PostUsersMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postUsers(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostUsersMutationResult = NonNullable<Awaited<ReturnType<typeof postUsers>>>;
+export type PostUsersMutationBody = StaffCreate;
+export type PostUsersMutationError = unknown;
+export type PostUsersMutationVariables = { data: StaffCreate };
+
+export const usePostUsers = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postUsers>>,
+      TError,
+      PostUsersMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postUsers>>,
+  TError,
+  PostUsersMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostUsersMutationOptions(options), queryClient);
+};
+
+export type postUserDeactivateResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type postUserDeactivateResponseSuccess = postUserDeactivateResponse204 & {
+  headers: Headers;
+};
+export type postUserDeactivateResponse = postUserDeactivateResponseSuccess;
+
+export const getPostUserDeactivateUrl = (id: number) => {
+  return `/api/v1/users/${id}/deactivate`;
+};
+
+export const postUserDeactivate = async (
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postUserDeactivateResponse> => {
+  return customFetch<postUserDeactivateResponse>(getPostUserDeactivateUrl(id), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostUserDeactivateMutationKey = () => ['postUserDeactivate'] as const;
+
+export const getPostUserDeactivateMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postUserDeactivate>>,
+    TError,
+    PostUserDeactivateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postUserDeactivate>>,
+  TError,
+  PostUserDeactivateMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostUserDeactivateMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postUserDeactivate>>,
+    PostUserDeactivateMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return postUserDeactivate(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostUserDeactivateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postUserDeactivate>>
+>;
+
+export type PostUserDeactivateMutationError = unknown;
+export type PostUserDeactivateMutationVariables = { id: number };
+
+export const usePostUserDeactivate = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postUserDeactivate>>,
+      TError,
+      PostUserDeactivateMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postUserDeactivate>>,
+  TError,
+  PostUserDeactivateMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostUserDeactivateMutationOptions(options), queryClient);
+};
+
+export type postUserRoleResponse200 = {
+  data: StaffUser;
+  status: 200;
+};
+
+export type postUserRoleResponseSuccess = postUserRoleResponse200 & {
+  headers: Headers;
+};
+export type postUserRoleResponse = postUserRoleResponseSuccess;
+
+export const getPostUserRoleUrl = (id: number) => {
+  return `/api/v1/users/${id}/role`;
+};
+
+export const postUserRole = async (
+  id: number,
+  roleAssignment: RoleAssignment,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postUserRoleResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postUserRoleResponse>(getPostUserRoleUrl(id), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(roleAssignment),
+  });
+};
+
+export const getPostUserRoleMutationKey = () => ['postUserRole'] as const;
+
+export const getPostUserRoleMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postUserRole>>,
+    TError,
+    PostUserRoleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postUserRole>>,
+  TError,
+  PostUserRoleMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostUserRoleMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postUserRole>>,
+    PostUserRoleMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return postUserRole(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostUserRoleMutationResult = NonNullable<Awaited<ReturnType<typeof postUserRole>>>;
+export type PostUserRoleMutationBody = RoleAssignment;
+export type PostUserRoleMutationError = unknown;
+export type PostUserRoleMutationVariables = { id: number; data: RoleAssignment };
+
+export const usePostUserRole = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postUserRole>>,
+      TError,
+      PostUserRoleMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postUserRole>>,
+  TError,
+  PostUserRoleMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostUserRoleMutationOptions(options), queryClient);
+};
+
+export type postUserSecurityResetResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type postUserSecurityResetResponseSuccess = postUserSecurityResetResponse204 & {
+  headers: Headers;
+};
+export type postUserSecurityResetResponse = postUserSecurityResetResponseSuccess;
+
+export const getPostUserSecurityResetUrl = (id: number) => {
+  return `/api/v1/users/${id}/security-reset`;
+};
+
+/**
+ * Incident response / lost device: revoke everything and force a fresh onboarding.
+ *
+ * Revokes all sessions and refresh tokens, removes every second factor and recovery
+ * code, makes the password unusable and emails a single-use link: the owner must set a
+ * new password and enroll MFA again before any access.
+ */
+export const postUserSecurityReset = async (
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postUserSecurityResetResponse> => {
+  return customFetch<postUserSecurityResetResponse>(getPostUserSecurityResetUrl(id), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostUserSecurityResetMutationKey = () => ['postUserSecurityReset'] as const;
+
+export const getPostUserSecurityResetMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postUserSecurityReset>>,
+    TError,
+    PostUserSecurityResetMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postUserSecurityReset>>,
+  TError,
+  PostUserSecurityResetMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostUserSecurityResetMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postUserSecurityReset>>,
+    PostUserSecurityResetMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return postUserSecurityReset(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostUserSecurityResetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postUserSecurityReset>>
+>;
+
+export type PostUserSecurityResetMutationError = unknown;
+export type PostUserSecurityResetMutationVariables = { id: number };
+
+export const usePostUserSecurityReset = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postUserSecurityReset>>,
+      TError,
+      PostUserSecurityResetMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postUserSecurityReset>>,
+  TError,
+  PostUserSecurityResetMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostUserSecurityResetMutationOptions(options), queryClient);
+};
+
 export type getUsersMeResponse200 = {
-  data: User;
+  data: CurrentUser;
   status: 200;
 };
 

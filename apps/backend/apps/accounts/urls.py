@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import mfa_views, security_views
+from . import mfa_views, security_views, staff_views
 from .views import (
     CsrfView,
     CurrentUserView,
@@ -126,4 +126,18 @@ urlpatterns = [
         name="session-revoke",
     ),
     path("users/me", CurrentUserView.as_view(), name="current-user"),
+    # Staff accounts and RBAC (WR-17).
+    path("roles", staff_views.RoleListView.as_view(), name="roles"),
+    path("users", staff_views.StaffUserListView.as_view(), name="users"),
+    path("users/<int:pk>/role", staff_views.StaffRoleView.as_view(), name="user-role"),
+    path(
+        "users/<int:pk>/deactivate",
+        staff_views.StaffDeactivateView.as_view(),
+        name="user-deactivate",
+    ),
+    path(
+        "users/<int:pk>/security-reset",
+        staff_views.StaffSecurityResetView.as_view(),
+        name="user-security-reset",
+    ),
 ]
