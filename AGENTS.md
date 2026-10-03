@@ -4,6 +4,7 @@
 
 - Sources of truth, highest first: `WRM-CLIENT-SOT` (company data) → `UserStory` (functional scope v1.0) → `Stack` (technical baseline v1.0) → Jira issue → this repository. Never invent company data: anything not confirmed in `WRM-CLIENT-SOT` stays `null`/`DA DEFINIRE`.
 - Every issue follows the RamoVerde **Definition of Ready / Definition of Done**: `docs/agents/definition-of-ready-done.md`. Done means correct, valuable, simple, accessible, secure, tested, with fresh evidence and an independent review — not just green gates.
+- PO decisions and deliberately empty values (e.g. copyright holder): `docs/decisions/decision-register.md` — never guess an open value.
 - Visual direction: Design 09 (`evidences/demo-design-sistem/design-09-infrastructure/`). Product copy is Italian.
 
 ## Architecture and sources of truth
