@@ -87,3 +87,10 @@ A file can pass the signature and Pillow checks while also being valid in anothe
 - Moving a blob between storages is a copy + delete right after commit in the request thread; very large videos make approval slow. Acceptable for MVP volumes.
 - The reference scan over section JSON is a Python loop over all sections: fine at MVP scale, replace with a reference table if pages grow to thousands.
 - Bulk delete is disabled in the admin so blobs are always cleaned up.
+
+## Recovery and hardening (second review pass)
+
+- **Storage recovery:** the post-commit blob move never turns a committed write into a 500; a failure is logged as `media.reconcile_failed` (with `asset_id`). `python manage.py reconcile_media` re-applies the storage rule to every asset (idempotent, exits non-zero if any asset fails). Run it after every deploy and on a schedule in production, so a rejected/private blob can never linger in the public bucket.
+- **ORM deletes:** a `pre_delete` receiver raises `ProtectedError` for any asset still referenced (section content, page or SEO og image), covering model and queryset deletes as well as API/admin paths.
+- **JSON parsing:** `apps.core.parsers.SafeJSONParser` is the DRF default parser for every endpoint (including anonymous auth endpoints): pathological nesting is a 400, not a 500.
+- **Accepted residual risk (N4):** a concurrent "make private/delete" may miss a section reference that is not yet committed; public rendering still hides non-public media and the section stays editable.

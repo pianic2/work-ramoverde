@@ -5,6 +5,7 @@ APPROVED. Everything else (PRIVATE, PENDING, REJECTED) stays in the private stor
 never produces a public URL. `stored_publicly` records where the blob currently is.
 """
 
+import logging
 import uuid
 from collections.abc import Callable
 from typing import Any
@@ -25,6 +26,9 @@ PRIVATE_STORAGE = "media_private"
 EDITABLE_FIELDS = frozenset(
     {"alt_text", "caption", "visibility", "origin", "source_note", "authorization_status"}
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def public_storage() -> Storage:
@@ -141,8 +145,19 @@ def _ensure_not_referenced(asset_id: int) -> None:
 
 
 def schedule_reconcile(asset_id: int) -> None:
-    """Place the blob after the current transaction commits; nothing happens on rollback."""
-    transaction.on_commit(lambda: reconcile_storage(asset_id))
+    """Place the blob after the current transaction commits; nothing happens on rollback.
+
+    The write is already committed when this runs, so a storage failure is logged (not
+    raised as a 500) and repaired later by `manage.py reconcile_media`.
+    """
+
+    def run() -> None:
+        try:
+            reconcile_storage(asset_id)
+        except Exception:
+            logger.exception("media.reconcile_failed", extra={"asset_id": asset_id})
+
+    transaction.on_commit(run)
 
 
 def reconcile_storage(asset_id: int) -> None:

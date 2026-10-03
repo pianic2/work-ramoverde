@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsStaffUser, StaffModelPermissions
-from apps.media.parsers import SafeJSONParser
+from apps.core.parsers import SafeJSONParser
 
 from . import services
 from .models import NavigationItem, NavigationMenu, Page, PageSection, SEOSettings, SiteSettings

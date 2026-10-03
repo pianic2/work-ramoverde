@@ -14,10 +14,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.accounts.permissions import StaffModelPermissions
+from apps.core.parsers import SafeJSONParser
 
 from . import services
 from .models import MediaAsset
-from .parsers import SafeJSONParser
 from .serializers import (
     MediaAssetSerializer,
     MediaAssetUpdateSerializer,

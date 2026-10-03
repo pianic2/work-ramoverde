@@ -195,6 +195,12 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    # SafeJSONParser turns pathological nesting into a 400 for every endpoint (incl. anonymous).
+    "DEFAULT_PARSER_CLASSES": [
+        "apps.core.parsers.SafeJSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ],
     "DEFAULT_THROTTLE_RATES": {
         "auth_session_login": "10/minute",
         "auth_token_obtain": "10/minute",
