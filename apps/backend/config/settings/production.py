@@ -40,3 +40,13 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 STAFF_LOGIN_URL = os.getenv("STAFF_LOGIN_URL", f"{CORS_ALLOWED_ORIGINS[0]}/admin/login")
 if urlsplit(STAFF_LOGIN_URL).scheme != "https":
     raise RuntimeError("STAFF_LOGIN_URL must use HTTPS in production")
+
+# WebAuthn is bound to the web origins (HTTPS) and their registrable domain.
+WEBAUTHN_ORIGINS = [
+    value
+    for value in os.getenv("WEBAUTHN_ORIGINS", ",".join(CORS_ALLOWED_ORIGINS)).split(",")
+    if value
+]
+if any(urlsplit(origin).scheme != "https" for origin in WEBAUTHN_ORIGINS):
+    raise RuntimeError("WEBAUTHN_ORIGINS must contain only HTTPS origins")
+WEBAUTHN_RP_ID = os.getenv("WEBAUTHN_RP_ID", urlsplit(WEBAUTHN_ORIGINS[0]).hostname or "")

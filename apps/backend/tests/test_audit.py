@@ -1,6 +1,6 @@
 import pytest
 from django.contrib.auth import get_user_model
-from django.db import connection
+from django.db import connection, transaction
 from django.db.utils import DatabaseError
 from django.test import RequestFactory
 
@@ -61,14 +61,14 @@ def test_audit_events_are_append_only_in_orm():
 @pytest.mark.django_db
 def test_audit_events_are_append_only_in_postgresql():
     event = record_event("auth.logout")
-    with pytest.raises(DatabaseError), connection.cursor() as cursor:
+    with pytest.raises(DatabaseError), transaction.atomic(), connection.cursor() as cursor:
         cursor.execute("UPDATE audit_auditevent SET action = 'tampered' WHERE id = %s", [event.pk])
 
 
 @pytest.mark.django_db
 def test_audit_event_rows_cannot_be_deleted_in_postgresql():
     event = record_event("auth.logout")
-    with pytest.raises(DatabaseError), connection.cursor() as cursor:
+    with pytest.raises(DatabaseError), transaction.atomic(), connection.cursor() as cursor:
         cursor.execute("DELETE FROM audit_auditevent WHERE id = %s", [event.pk])
 
 

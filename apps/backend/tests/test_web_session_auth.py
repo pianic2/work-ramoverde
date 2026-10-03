@@ -5,28 +5,16 @@ import subprocess
 import sys
 
 import pytest
+from auth_helpers import PASSWORD, create_staff, csrf_client, enroll_totp, web_login, web_post
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
-from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from apps.accounts.models import UserSession
 from apps.audit.models import AuditEvent
 
 User = get_user_model()
-PASSWORD = "correct-horse-battery-staple"
-
-
-@pytest.fixture(autouse=True)
-def _clear_cache():
-    cache.clear()
-
-
-def csrf_client() -> tuple[APIClient, str]:
-    client = APIClient(enforce_csrf_checks=True, HTTP_USER_AGENT="Firefox/140 test")
-    token = client.get("/api/v1/auth/csrf").json()["csrfToken"]
-    return client, token
 
 
 def login(client: APIClient, csrf: str, email: str, password: str = PASSWORD):
@@ -71,17 +59,23 @@ def test_failed_login_messages_do_not_reveal_whether_the_account_exists():
 
 @pytest.mark.django_db
 def test_login_rotates_session_key_and_tracks_the_web_session():
-    user = User.objects.create_user(email="staff@example.com", password=PASSWORD, is_staff=True)
+    user = create_staff()
+    totp = enroll_totp(user)
     client, csrf = csrf_client()
     client.cookies["sessionid"] = "attacker-fixed-session"
 
-    response = login(client, csrf, user.email)
+    login(client, csrf, user.email)
+    pending_key = client.cookies["sessionid"].value
+    assert pending_key != "attacker-fixed-session"
+    response = web_post(
+        client, csrf, "/api/v1/auth/session/mfa/verify", {"method": "totp", "code": totp.now()}
+    )
 
     assert response.status_code == 200
     cookie = response.cookies["sessionid"]
     assert cookie["httponly"]
     assert cookie["samesite"] == "Lax"
-    assert cookie.value != "attacker-fixed-session"
+    assert cookie.value not in ("attacker-fixed-session", pending_key)
     tracked = UserSession.objects.get(user=user)
     assert tracked.kind == UserSession.Kind.WEB
     assert tracked.session_key == cookie.value
@@ -91,25 +85,22 @@ def test_login_rotates_session_key_and_tracks_the_web_session():
 
 @pytest.mark.django_db
 def test_logout_requires_csrf_revokes_the_tracked_session_and_is_audited():
-    user = User.objects.create_user(email="staff@example.com", password=PASSWORD, is_staff=True)
-    client, csrf = csrf_client()
-    login(client, csrf, user.email)
-    csrf = client.get("/api/v1/auth/csrf").json()["csrfToken"]
+    user = create_staff()
+    client, csrf = web_login(user, enroll_totp(user))
 
     assert client.post("/api/v1/auth/session/logout").status_code == 403
     assert client.post("/api/v1/auth/session/logout", HTTP_X_CSRFTOKEN=csrf).status_code == 204
 
     assert client.get("/api/v1/users/me").status_code in (401, 403)
     assert UserSession.objects.get(user=user).revoked_at is not None
-    assert not Session.objects.exists()
+    assert not Session.objects.filter(session_key=UserSession.objects.get().session_key).exists()
     assert AuditEvent.objects.filter(action="auth.logout", actor=user).exists()
 
 
 @pytest.mark.django_db
 def test_revoked_tracked_session_no_longer_authenticates():
-    user = User.objects.create_user(email="staff@example.com", password=PASSWORD, is_staff=True)
-    client, csrf = csrf_client()
-    login(client, csrf, user.email)
+    user = create_staff()
+    client, _ = web_login(user, enroll_totp(user))
     tracked = UserSession.objects.get(user=user)
     UserSession.objects.filter(pk=tracked.pk).update(revoked_at=tracked.created_at)
 
@@ -118,10 +109,11 @@ def test_revoked_tracked_session_no_longer_authenticates():
 
 @pytest.mark.django_db
 def test_login_success_and_failure_are_audited_without_secrets():
-    user = User.objects.create_user(email="staff@example.com", password=PASSWORD, is_staff=True)
+    user = create_staff()
+    totp = enroll_totp(user)
     client, csrf = csrf_client()
     login(client, csrf, user.email, "wrong-password-123")
-    login(client, csrf, user.email)
+    web_login(user, totp)
 
     failure = AuditEvent.objects.get(action="auth.login.failure")
     success = AuditEvent.objects.get(action="auth.login.success")
@@ -129,7 +121,7 @@ def test_login_success_and_failure_are_audited_without_secrets():
     assert failure.actor is None
     assert success.actor == user
     assert success.metadata["channel"] == "web"
-    for event in (failure, success):
+    for event in AuditEvent.objects.all():
         assert "wrong-password-123" not in str(event.metadata)
         assert PASSWORD not in str(event.metadata)
 
@@ -156,16 +148,14 @@ def test_django_admin_password_form_cannot_log_anyone_in():
 
 
 @pytest.mark.django_db
-def test_django_admin_is_limited_to_superusers_with_a_tracked_staff_session():
-    staff = User.objects.create_user(email="staff@example.com", password=PASSWORD, is_staff=True)
-    root = User.objects.create_superuser(email="root@example.com", password=PASSWORD)
+def test_django_admin_is_limited_to_superusers_with_an_mfa_verified_staff_session():
+    staff = create_staff()
+    root = create_staff("root@example.com", is_superuser=True)
 
-    client, csrf = csrf_client()
-    login(client, csrf, staff.email)
+    client, _ = web_login(staff, enroll_totp(staff))
     assert client.get("/django-admin/").status_code == 302
 
-    client, csrf = csrf_client()
-    login(client, csrf, root.email)
+    client, _ = web_login(root, enroll_totp(root))
     assert client.get("/django-admin/").status_code == 200
 
     client = APIClient()

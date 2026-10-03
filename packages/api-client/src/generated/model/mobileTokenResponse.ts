@@ -9,4 +9,6 @@
 export interface MobileTokenResponse {
   access: string;
   refresh: string;
+  /** Only after first MFA enrollment: show once, never stored by the app. */
+  recovery_codes?: string[];
 }

@@ -10,7 +10,11 @@ def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response |
     if response is None:
         return None
     details = response.data
-    code = exc.default_code if isinstance(exc, APIException) else "request_error"
+    code: Any = "request_error"
+    if isinstance(exc, APIException):
+        # Prefer the specific code raised (e.g. "mfa_failed", "step_up_required").
+        codes = exc.get_codes()
+        code = codes if isinstance(codes, str) else exc.default_code
     request = context.get("request")
     response.data = {
         "error": {

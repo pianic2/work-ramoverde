@@ -3,8 +3,8 @@
 from datetime import timedelta
 
 import pytest
+from auth_helpers import PASSWORD, enroll_totp, mobile_login, mobile_password_step
 from django.contrib.auth import get_user_model
-from django.core.cache import cache
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
@@ -13,12 +13,6 @@ from apps.accounts.models import UserSession
 from apps.audit.models import AuditEvent
 
 User = get_user_model()
-PASSWORD = "correct-horse-battery-staple"
-
-
-@pytest.fixture(autouse=True)
-def _clear_cache():
-    cache.clear()
 
 
 @pytest.fixture
@@ -26,21 +20,33 @@ def staff():
     return User.objects.create_user(email="op@example.com", password=PASSWORD, is_staff=True)
 
 
-def obtain(client: APIClient, email: str, password: str = PASSWORD):
-    return client.post(
-        "/api/v1/auth/token",
-        {"email": email, "password": password},
-        format="json",
-        HTTP_USER_AGENT="RamoVerdeStaff/1.0 (Android 15)",
-    )
+@pytest.fixture
+def totp(staff):
+    return enroll_totp(staff)
+
+
+class _Login:
+    """Successive full sign-ins use successive TOTP steps (codes are single use)."""
+
+    def __init__(self, staff, totp):
+        self.staff, self.totp, self.step = staff, totp, -1
+
+    def __call__(self):
+        tokens = mobile_login(self.staff, self.totp, offset_steps=self.step)
+        self.step += 1
+        return tokens
+
+
+@pytest.fixture
+def login(staff, totp):
+    return _Login(staff, totp)
 
 
 @pytest.mark.django_db
-def test_token_pair_is_bound_to_a_tracked_mobile_session(staff):
-    response = obtain(APIClient(), staff.email)
-    assert response.status_code == 200
-    access = AccessToken(response.json()["access"])
-    refresh = RefreshToken(response.json()["refresh"])
+def test_token_pair_is_bound_to_a_tracked_mobile_session(staff, login):
+    tokens = login()
+    access = AccessToken(tokens["access"])
+    refresh = RefreshToken(tokens["refresh"])
     tracked = UserSession.objects.get(user=staff)
     assert tracked.kind == UserSession.Kind.MOBILE
     assert tracked.user_agent == "RamoVerdeStaff/1.0 (Android 15)"
@@ -53,9 +59,9 @@ def test_token_failures_are_generic_and_never_issue_tokens(staff):
     User.objects.create_user(email="member@example.com", password=PASSWORD)
     client = APIClient()
     responses = [
-        obtain(client, staff.email, "wrong-password-123"),
-        obtain(client, "nobody@example.com"),
-        obtain(client, "member@example.com"),
+        mobile_password_step(client, staff.email, "wrong-password-123"),
+        mobile_password_step(client, "nobody@example.com"),
+        mobile_password_step(client, "member@example.com"),
     ]
     for response in responses:
         assert response.status_code == 401
@@ -65,8 +71,8 @@ def test_token_failures_are_generic_and_never_issue_tokens(staff):
 
 
 @pytest.mark.django_db
-def test_access_token_stops_working_when_its_session_is_revoked(staff):
-    tokens = obtain(APIClient(), staff.email).json()
+def test_access_token_stops_working_when_its_session_is_revoked(staff, login):
+    tokens = login()
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
     assert client.get("/api/v1/users/me").status_code == 200
@@ -76,7 +82,7 @@ def test_access_token_stops_working_when_its_session_is_revoked(staff):
 
 
 @pytest.mark.django_db
-def test_tokens_without_a_session_claim_are_rejected(staff):
+def test_tokens_without_a_session_claim_are_rejected(staff, login):
     access = RefreshToken.for_user(staff).access_token
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
@@ -84,9 +90,9 @@ def test_tokens_without_a_session_claim_are_rejected(staff):
 
 
 @pytest.mark.django_db
-def test_refresh_rotates_and_blacklists_the_previous_refresh_token(staff):
+def test_refresh_rotates_and_blacklists_the_previous_refresh_token(staff, login):
     client = APIClient()
-    first = obtain(client, staff.email).json()
+    first = login()
     rotated = client.post("/api/v1/auth/token/refresh", {"refresh": first["refresh"]})
     assert rotated.status_code == 200
     assert rotated.json()["refresh"] != first["refresh"]
@@ -97,9 +103,9 @@ def test_refresh_rotates_and_blacklists_the_previous_refresh_token(staff):
 
 
 @pytest.mark.django_db
-def test_reusing_a_rotated_refresh_token_revokes_the_whole_session(staff):
+def test_reusing_a_rotated_refresh_token_revokes_the_whole_session(staff, login):
     client = APIClient()
-    first = obtain(client, staff.email).json()
+    first = login()
     second = client.post("/api/v1/auth/token/refresh", {"refresh": first["refresh"]}).json()
 
     replay = client.post("/api/v1/auth/token/refresh", {"refresh": first["refresh"]})
@@ -112,15 +118,15 @@ def test_reusing_a_rotated_refresh_token_revokes_the_whole_session(staff):
 
 
 @pytest.mark.django_db
-def test_refresh_is_refused_for_revoked_sessions_and_deactivated_accounts(staff):
+def test_refresh_is_refused_for_revoked_sessions_and_deactivated_accounts(staff, login):
     client = APIClient()
-    tokens = obtain(client, staff.email).json()
+    tokens = login()
     UserSession.objects.filter(user=staff).update(revoked_at=timezone.now())
     assert (
         client.post("/api/v1/auth/token/refresh", {"refresh": tokens["refresh"]}).status_code == 401
     )
 
-    tokens = obtain(client, staff.email).json()
+    tokens = login()
     User.objects.filter(pk=staff.pk).update(is_active=False)
     assert (
         client.post("/api/v1/auth/token/refresh", {"refresh": tokens["refresh"]}).status_code == 401
@@ -128,9 +134,9 @@ def test_refresh_is_refused_for_revoked_sessions_and_deactivated_accounts(staff)
 
 
 @pytest.mark.django_db
-def test_refresh_is_refused_after_the_absolute_mobile_session_lifetime(staff, settings):
+def test_refresh_is_refused_after_the_absolute_mobile_session_lifetime(staff, settings, login):
     client = APIClient()
-    tokens = obtain(client, staff.email).json()
+    tokens = login()
     UserSession.objects.filter(user=staff).update(
         created_at=timezone.now() - settings.MOBILE_SESSION_MAX_AGE - timedelta(minutes=1)
     )
@@ -140,9 +146,9 @@ def test_refresh_is_refused_after_the_absolute_mobile_session_lifetime(staff, se
 
 
 @pytest.mark.django_db
-def test_logout_blacklists_refresh_and_revokes_the_session(staff):
+def test_logout_blacklists_refresh_and_revokes_the_session(staff, login):
     client = APIClient()
-    tokens = obtain(client, staff.email).json()
+    tokens = login()
     assert (
         client.post("/api/v1/auth/token/logout", {"refresh": tokens["refresh"]}).status_code == 204
     )
@@ -157,8 +163,8 @@ def test_logout_blacklists_refresh_and_revokes_the_session(staff):
 
 
 @pytest.mark.django_db
-def test_password_change_invalidates_existing_tokens(staff):
-    tokens = obtain(APIClient(), staff.email).json()
+def test_password_change_invalidates_existing_tokens(staff, login):
+    tokens = login()
     staff.set_password("another-long-passphrase-42")
     staff.save()
     client = APIClient()

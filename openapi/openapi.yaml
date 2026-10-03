@@ -18,11 +18,159 @@ paths:
               schema:
                 $ref: '#/components/schemas/CsrfToken'
           description: ''
+  /api/v1/auth/mfa:
+    get:
+      operationId: getAuthMfa
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaStatus'
+          description: ''
+  /api/v1/auth/mfa/recovery-codes:
+    post:
+      operationId: postAuthMfaRecoveryCodes
+      description: Changing second factors requires a recent MFA verification (step-up).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryCodes'
+          description: ''
+  /api/v1/auth/mfa/totp:
+    delete:
+      operationId: deleteAuthMfaTotp
+      description: Changing second factors requires a recent MFA verification (step-up).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/mfa/totp/confirm:
+    post:
+      operationId: postAuthMfaTotpConfirm
+      description: Changing second factors requires a recent MFA verification (step-up).
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TotpConfirm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TotpConfirm'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TotpConfirm'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaStatus'
+          description: ''
+  /api/v1/auth/mfa/totp/setup:
+    post:
+      operationId: postAuthMfaTotpSetup
+      description: Changing second factors requires a recent MFA verification (step-up).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotpSetup'
+          description: ''
+  /api/v1/auth/mfa/webauthn/{id}:
+    delete:
+      operationId: deleteAuthMfaWebauthn
+      description: Changing second factors requires a recent MFA verification (step-up).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/mfa/webauthn/register/options:
+    post:
+      operationId: postAuthMfaWebauthnRegisterOptions
+      description: Changing second factors requires a recent MFA verification (step-up).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebAuthnOptions'
+          description: ''
+  /api/v1/auth/mfa/webauthn/register/verify:
+    post:
+      operationId: postAuthMfaWebauthnRegisterVerify
+      description: Changing second factors requires a recent MFA verification (step-up).
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebAuthnRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WebAuthnRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WebAuthnRegister'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaStatus'
+          description: ''
   /api/v1/auth/session/login:
     post:
       operationId: postAuthSessionLogin
-      description: Unauthenticated auth endpoint that reports failures as 401 with
-        a generic message.
+      description: 'Password step. Does not sign in: a second factor must follow.'
       tags:
       - v1
       requestBody:
@@ -44,7 +192,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/SessionAuthFlow'
           description: ''
   /api/v1/auth/session/logout:
     post:
@@ -56,11 +204,185 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/auth/session/mfa/totp/confirm:
+    post:
+      operationId: postAuthSessionMfaTotpConfirm
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TotpConfirm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TotpConfirm'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TotpConfirm'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAuthFlow'
+          description: ''
+  /api/v1/auth/session/mfa/totp/setup:
+    post:
+      operationId: postAuthSessionMfaTotpSetup
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotpSetup'
+          description: ''
+  /api/v1/auth/session/mfa/verify:
+    post:
+      operationId: postAuthSessionMfaVerify
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaVerify'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MfaVerify'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MfaVerify'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAuthFlow'
+          description: ''
+  /api/v1/auth/session/mfa/webauthn/options:
+    post:
+      operationId: postAuthSessionMfaWebauthnOptions
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebAuthnOptions'
+          description: ''
+  /api/v1/auth/session/mfa/webauthn/register/options:
+    post:
+      operationId: postAuthSessionMfaWebauthnRegisterOptions
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebAuthnOptions'
+          description: ''
+  /api/v1/auth/session/mfa/webauthn/register/verify:
+    post:
+      operationId: postAuthSessionMfaWebauthnRegisterVerify
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebAuthnRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WebAuthnRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WebAuthnRegister'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAuthFlow'
+          description: ''
+  /api/v1/auth/step-up:
+    post:
+      operationId: postAuthStepUp
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaVerify'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MfaVerify'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MfaVerify'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpResponse'
+          description: ''
+  /api/v1/auth/step-up/webauthn/options:
+    post:
+      operationId: postAuthStepUpWebauthnOptions
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebAuthnOptions'
+          description: ''
   /api/v1/auth/token:
     post:
       operationId: postAuthToken
-      description: Unauthenticated auth endpoint that reports failures as 401 with
-        a generic message.
+      description: 'Password step. Never returns tokens: complete it with a second
+        factor.'
       tags:
       - v1
       requestBody:
@@ -82,7 +404,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MobileTokenResponse'
+                $ref: '#/components/schemas/MobileAuthFlow'
           description: ''
   /api/v1/auth/token/logout:
     post:
@@ -108,6 +430,90 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/auth/token/mfa/totp/confirm:
+    post:
+      operationId: postAuthTokenMfaTotpConfirm
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileTotpConfirm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MobileTotpConfirm'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MobileTotpConfirm'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenResponse'
+          description: ''
+  /api/v1/auth/token/mfa/totp/setup:
+    post:
+      operationId: postAuthTokenMfaTotpSetup
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileChallenge'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MobileChallenge'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MobileChallenge'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotpSetup'
+          description: ''
+  /api/v1/auth/token/mfa/verify:
+    post:
+      operationId: postAuthTokenMfaVerify
+      description: Unauthenticated step of the sign-in flow; failures are generic
+        401s.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileMfaVerify'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MobileMfaVerify'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MobileMfaVerify'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenResponse'
+          description: ''
   /api/v1/auth/token/refresh:
     post:
       operationId: postAuthTokenRefresh
@@ -190,6 +596,16 @@ paths:
           description: ''
 components:
   schemas:
+    AuthFlowStatusEnum:
+      enum:
+      - mfa_required
+      - mfa_enrollment_required
+      - authenticated
+      type: string
+      description: |-
+        * `mfa_required` - Second factor required
+        * `mfa_enrollment_required` - Second factor enrollment required
+        * `authenticated` - Authenticated
     CsrfToken:
       type: object
       properties:
@@ -197,6 +613,74 @@ components:
           type: string
       required:
       - csrfToken
+    MfaMethodEnum:
+      enum:
+      - totp
+      - recovery
+      - webauthn
+      type: string
+      description: |-
+        * `totp` - TOTP
+        * `recovery` - Recovery code
+        * `webauthn` - WebAuthn
+    MfaStatus:
+      type: object
+      properties:
+        methods:
+          type: array
+          items:
+            $ref: '#/components/schemas/MfaMethodEnum'
+        totp_enabled:
+          type: boolean
+        webauthn_credentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebAuthnCredential'
+        recovery_codes_remaining:
+          type: integer
+      required:
+      - methods
+      - recovery_codes_remaining
+      - totp_enabled
+      - webauthn_credentials
+    MfaVerify:
+      type: object
+      properties:
+        method:
+          $ref: '#/components/schemas/MfaMethodEnum'
+        code:
+          type: string
+          writeOnly: true
+          maxLength: 32
+        credential:
+          writeOnly: true
+      required:
+      - method
+    MobileAuthFlow:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/AuthFlowStatusEnum'
+        methods:
+          type: array
+          items:
+            $ref: '#/components/schemas/MfaMethodEnum'
+        challenge:
+          type: string
+          description: Short-lived, single-use MFA challenge.
+      required:
+      - challenge
+      - methods
+      - status
+    MobileChallenge:
+      type: object
+      properties:
+        challenge:
+          type: string
+          writeOnly: true
+          maxLength: 2048
+      required:
+      - challenge
     MobileCredentials:
       type: object
       properties:
@@ -206,6 +690,7 @@ components:
         password:
           type: string
           writeOnly: true
+          maxLength: 4096
       required:
       - email
       - password
@@ -217,6 +702,31 @@ components:
           writeOnly: true
       required:
       - refresh
+    MobileMfaMethodEnum:
+      enum:
+      - totp
+      - recovery
+      type: string
+      description: |-
+        * `totp` - TOTP
+        * `recovery` - Recovery code
+    MobileMfaVerify:
+      type: object
+      properties:
+        challenge:
+          type: string
+          writeOnly: true
+          maxLength: 2048
+        method:
+          $ref: '#/components/schemas/MobileMfaMethodEnum'
+        code:
+          type: string
+          writeOnly: true
+          maxLength: 32
+      required:
+      - challenge
+      - code
+      - method
     MobileRefresh:
       type: object
       properties:
@@ -231,9 +741,56 @@ components:
           type: string
         refresh:
           type: string
+        recovery_codes:
+          type: array
+          items:
+            type: string
+          description: 'Only after first MFA enrollment: show once, never stored by
+            the app.'
       required:
       - access
       - refresh
+    MobileTotpConfirm:
+      type: object
+      properties:
+        challenge:
+          type: string
+          writeOnly: true
+          maxLength: 2048
+        code:
+          type: string
+          writeOnly: true
+          maxLength: 32
+      required:
+      - challenge
+      - code
+    RecoveryCodes:
+      type: object
+      properties:
+        recovery_codes:
+          type: array
+          items:
+            type: string
+      required:
+      - recovery_codes
+    SessionAuthFlow:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/AuthFlowStatusEnum'
+        methods:
+          type: array
+          items:
+            $ref: '#/components/schemas/MfaMethodEnum'
+        user:
+          $ref: '#/components/schemas/User'
+        recovery_codes:
+          type: array
+          items:
+            type: string
+      required:
+      - methods
+      - status
     SessionLogin:
       type: object
       properties:
@@ -243,9 +800,37 @@ components:
         password:
           type: string
           writeOnly: true
+          maxLength: 4096
       required:
       - email
       - password
+    StepUpResponse:
+      type: object
+      properties:
+        mfa_verified_at:
+          type: string
+          format: date-time
+      required:
+      - mfa_verified_at
+    TotpConfirm:
+      type: object
+      properties:
+        code:
+          type: string
+          writeOnly: true
+          maxLength: 32
+      required:
+      - code
+    TotpSetup:
+      type: object
+      properties:
+        secret:
+          type: string
+        otpauth_uri:
+          type: string
+      required:
+      - otpauth_uri
+      - secret
     User:
       type: object
       properties:
@@ -269,6 +854,47 @@ components:
       - first_name
       - id
       - last_name
+    WebAuthnCredential:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_used_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - created_at
+      - id
+      - last_used_at
+      - name
+    WebAuthnOptions:
+      type: object
+      properties:
+        options:
+          description: PublicKeyCredential options for the browser.
+      required:
+      - options
+    WebAuthnRegister:
+      type: object
+      properties:
+        credential:
+          writeOnly: true
+        name:
+          type: string
+          default: Passkey
+          maxLength: 64
+      required:
+      - credential
   securitySchemes:
     cookieAuth:
       type: apiKey

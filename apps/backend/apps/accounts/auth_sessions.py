@@ -34,8 +34,10 @@ def _metadata(request: Any) -> dict[str, Any]:
     }
 
 
-def start_web_session(request: HttpRequest, user: User) -> UserSession:
-    """Log the user into Django's session (rotating its key) and track it."""
+def start_web_session(request: HttpRequest, user: User, *, mfa_method: str) -> UserSession:
+    """Log the user into Django's session (rotating its key) and track it.
+
+    Call only after the second factor succeeded (see `login_flow`)."""
     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
     session: SessionBase = request.session
     if session.session_key is None:
@@ -44,6 +46,8 @@ def start_web_session(request: HttpRequest, user: User) -> UserSession:
         user=user,
         kind=UserSession.Kind.WEB,
         session_key=session.session_key or "",
+        mfa_method=mfa_method,
+        mfa_verified_at=timezone.now(),
         **_metadata(request),
     )
     session[SESSION_ID_KEY] = tracked.pk
@@ -67,15 +71,24 @@ def active_web_session(request: HttpRequest) -> UserSession | None:
             kind=UserSession.Kind.WEB,
             session_key=session.session_key,
             revoked_at__isnull=True,
+            mfa_verified_at__isnull=False,
         )
         .first()
     )
 
 
-def start_mobile_session(request: Any, user: User) -> tuple[UserSession, dict[str, str]]:
-    """Track a new mobile device and issue its first access/refresh pair (`sid` claim)."""
+def start_mobile_session(
+    request: Any, user: User, *, mfa_method: str
+) -> tuple[UserSession, dict[str, str]]:
+    """Track a new mobile device and issue its first access/refresh pair (`sid` claim).
+
+    Call only after the second factor succeeded (see `login_flow`)."""
     tracked = UserSession.objects.create(
-        user=user, kind=UserSession.Kind.MOBILE, **_metadata(request)
+        user=user,
+        kind=UserSession.Kind.MOBILE,
+        mfa_method=mfa_method,
+        mfa_verified_at=timezone.now(),
+        **_metadata(request),
     )
     refresh = RefreshToken.for_user(user)
     refresh[SESSION_CLAIM] = tracked.pk
@@ -184,6 +197,7 @@ def active_mobile_session(session_id: Any, user_id: Any) -> UserSession | None:
             user_id=user_id,
             kind=UserSession.Kind.MOBILE,
             revoked_at__isnull=True,
+            mfa_verified_at__isnull=False,
             created_at__gt=timezone.now() - settings.MOBILE_SESSION_MAX_AGE,
         )
         .first()

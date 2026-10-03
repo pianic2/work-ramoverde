@@ -2,7 +2,14 @@ import {
   ApiError,
   postAuthToken,
   postAuthTokenLogout,
+  postAuthTokenMfaTotpConfirm,
+  postAuthTokenMfaTotpSetup,
+  postAuthTokenMfaVerify,
   postAuthTokenRefresh,
+  type MobileAuthFlow,
+  type MobileMfaMethodEnum,
+  type MobileTokenResponse,
+  type TotpSetup,
 } from '@ramoverde/api-client';
 import * as SecureStore from 'expo-secure-store';
 
@@ -27,14 +34,39 @@ export function readAccessToken(): Promise<string | null> {
   return SecureStore.getItemAsync(ACCESS_KEY);
 }
 
-export async function signIn(email: string, password: string): Promise<void> {
+/**
+ * Password step. Never yields tokens: the returned short-lived challenge stays in memory
+ * and must be completed with a second factor (TOTP or recovery code on mobile).
+ */
+export async function startSignIn(email: string, password: string): Promise<MobileAuthFlow> {
+  return (await postAuthToken({ email, password })).data;
+}
+
+async function storeTokens(tokens: MobileTokenResponse): Promise<void> {
   const generation = ++authGeneration;
-  const response = await postAuthToken({ email, password });
-  const tokens = response.data;
   await writeForCurrentSession(generation, async () => {
     await SecureStore.setItemAsync(ACCESS_KEY, tokens.access);
     await SecureStore.setItemAsync(REFRESH_KEY, tokens.refresh);
   });
+}
+
+export async function completeSignIn(
+  challenge: string,
+  method: MobileMfaMethodEnum,
+  code: string,
+): Promise<void> {
+  await storeTokens((await postAuthTokenMfaVerify({ challenge, method, code })).data);
+}
+
+export async function startTotpEnrollment(challenge: string): Promise<TotpSetup> {
+  return (await postAuthTokenMfaTotpSetup({ challenge })).data;
+}
+
+/** First enrollment: stores the tokens and returns recovery codes to show once (not stored). */
+export async function confirmTotpEnrollment(challenge: string, code: string): Promise<string[]> {
+  const tokens = (await postAuthTokenMfaTotpConfirm({ challenge, code })).data;
+  await storeTokens(tokens);
+  return tokens.recovery_codes ?? [];
 }
 
 export function refreshSession(): Promise<string | null> {

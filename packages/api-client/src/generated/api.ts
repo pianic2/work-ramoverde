@@ -26,12 +26,25 @@ import type {
   GetHealthLive200,
   GetHealthReady200,
   GetHealthReady503,
+  MfaStatus,
+  MfaVerify,
+  MobileAuthFlow,
+  MobileChallenge,
   MobileCredentials,
   MobileLogout,
+  MobileMfaVerify,
   MobileRefresh,
   MobileTokenResponse,
+  MobileTotpConfirm,
+  RecoveryCodes,
+  SessionAuthFlow,
   SessionLogin,
+  StepUpResponse,
+  TotpConfirm,
+  TotpSetup,
   User,
+  WebAuthnOptions,
+  WebAuthnRegister,
 } from './model';
 
 import { customFetch } from '../fetcher';
@@ -158,8 +171,777 @@ export function useGetAuthCsrf<TData = Awaited<ReturnType<typeof getAuthCsrf>>, 
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export type getAuthMfaResponse200 = {
+  data: MfaStatus;
+  status: 200;
+};
+
+export type getAuthMfaResponseSuccess = getAuthMfaResponse200 & {
+  headers: Headers;
+};
+export type getAuthMfaResponse = getAuthMfaResponseSuccess;
+
+export const getGetAuthMfaUrl = () => {
+  return `/api/v1/auth/mfa`;
+};
+
+export const getAuthMfa = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getAuthMfaResponse> => {
+  return customFetch<getAuthMfaResponse>(getGetAuthMfaUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetAuthMfaQueryKey = () => {
+  return [`/api/v1/auth/mfa`] as const;
+};
+
+export const getGetAuthMfaQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAuthMfa>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMfa>>, TError, TData>>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAuthMfaQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthMfa>>> = ({ signal }) =>
+    getAuthMfa({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAuthMfa>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetAuthMfaQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthMfa>>>;
+export type GetAuthMfaQueryError = unknown;
+
+export function useGetAuthMfa<TData = Awaited<ReturnType<typeof getAuthMfa>>, TError = unknown>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMfa>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthMfa>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthMfa>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetAuthMfa<TData = Awaited<ReturnType<typeof getAuthMfa>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMfa>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthMfa>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthMfa>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetAuthMfa<TData = Awaited<ReturnType<typeof getAuthMfa>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMfa>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetAuthMfa<TData = Awaited<ReturnType<typeof getAuthMfa>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMfa>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetAuthMfaQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type postAuthMfaRecoveryCodesResponse200 = {
+  data: RecoveryCodes;
+  status: 200;
+};
+
+export type postAuthMfaRecoveryCodesResponseSuccess = postAuthMfaRecoveryCodesResponse200 & {
+  headers: Headers;
+};
+export type postAuthMfaRecoveryCodesResponse = postAuthMfaRecoveryCodesResponseSuccess;
+
+export const getPostAuthMfaRecoveryCodesUrl = () => {
+  return `/api/v1/auth/mfa/recovery-codes`;
+};
+
+/**
+ * Changing second factors requires a recent MFA verification (step-up).
+ */
+export const postAuthMfaRecoveryCodes = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthMfaRecoveryCodesResponse> => {
+  return customFetch<postAuthMfaRecoveryCodesResponse>(getPostAuthMfaRecoveryCodesUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostAuthMfaRecoveryCodesMutationKey = () => ['postAuthMfaRecoveryCodes'] as const;
+
+export const getPostAuthMfaRecoveryCodesMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthMfaRecoveryCodes>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthMfaRecoveryCodes>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPostAuthMfaRecoveryCodesMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthMfaRecoveryCodes>>,
+    void
+  > = () => {
+    return postAuthMfaRecoveryCodes(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthMfaRecoveryCodesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthMfaRecoveryCodes>>
+>;
+
+export type PostAuthMfaRecoveryCodesMutationError = unknown;
+
+export const usePostAuthMfaRecoveryCodes = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthMfaRecoveryCodes>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthMfaRecoveryCodes>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPostAuthMfaRecoveryCodesMutationOptions(options), queryClient);
+};
+
+export type deleteAuthMfaTotpResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteAuthMfaTotpResponseSuccess = deleteAuthMfaTotpResponse204 & {
+  headers: Headers;
+};
+export type deleteAuthMfaTotpResponse = deleteAuthMfaTotpResponseSuccess;
+
+export const getDeleteAuthMfaTotpUrl = () => {
+  return `/api/v1/auth/mfa/totp`;
+};
+
+/**
+ * Changing second factors requires a recent MFA verification (step-up).
+ */
+export const deleteAuthMfaTotp = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<deleteAuthMfaTotpResponse> => {
+  return customFetch<deleteAuthMfaTotpResponse>(getDeleteAuthMfaTotpUrl(), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteAuthMfaTotpMutationKey = () => ['deleteAuthMfaTotp'] as const;
+
+export const getDeleteAuthMfaTotpMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAuthMfaTotp>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<Awaited<ReturnType<typeof deleteAuthMfaTotp>>, TError, void, TContext> => {
+  const mutationKey = getDeleteAuthMfaTotpMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAuthMfaTotp>>, void> = () => {
+    return deleteAuthMfaTotp(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAuthMfaTotpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAuthMfaTotp>>
+>;
+
+export type DeleteAuthMfaTotpMutationError = unknown;
+
+export const useDeleteAuthMfaTotp = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteAuthMfaTotp>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<Awaited<ReturnType<typeof deleteAuthMfaTotp>>, TError, void, TContext> => {
+  return useMutation(getDeleteAuthMfaTotpMutationOptions(options), queryClient);
+};
+
+export type postAuthMfaTotpConfirmResponse200 = {
+  data: MfaStatus;
+  status: 200;
+};
+
+export type postAuthMfaTotpConfirmResponseSuccess = postAuthMfaTotpConfirmResponse200 & {
+  headers: Headers;
+};
+export type postAuthMfaTotpConfirmResponse = postAuthMfaTotpConfirmResponseSuccess;
+
+export const getPostAuthMfaTotpConfirmUrl = () => {
+  return `/api/v1/auth/mfa/totp/confirm`;
+};
+
+/**
+ * Changing second factors requires a recent MFA verification (step-up).
+ */
+export const postAuthMfaTotpConfirm = async (
+  totpConfirm: TotpConfirm,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthMfaTotpConfirmResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthMfaTotpConfirmResponse>(getPostAuthMfaTotpConfirmUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(totpConfirm),
+  });
+};
+
+export const getPostAuthMfaTotpConfirmMutationKey = () => ['postAuthMfaTotpConfirm'] as const;
+
+export const getPostAuthMfaTotpConfirmMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthMfaTotpConfirm>>,
+    TError,
+    PostAuthMfaTotpConfirmMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthMfaTotpConfirm>>,
+  TError,
+  PostAuthMfaTotpConfirmMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthMfaTotpConfirmMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthMfaTotpConfirm>>,
+    PostAuthMfaTotpConfirmMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthMfaTotpConfirm(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthMfaTotpConfirmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthMfaTotpConfirm>>
+>;
+export type PostAuthMfaTotpConfirmMutationBody = TotpConfirm;
+export type PostAuthMfaTotpConfirmMutationError = unknown;
+export type PostAuthMfaTotpConfirmMutationVariables = { data: TotpConfirm };
+
+export const usePostAuthMfaTotpConfirm = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthMfaTotpConfirm>>,
+      TError,
+      PostAuthMfaTotpConfirmMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthMfaTotpConfirm>>,
+  TError,
+  PostAuthMfaTotpConfirmMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostAuthMfaTotpConfirmMutationOptions(options), queryClient);
+};
+
+export type postAuthMfaTotpSetupResponse200 = {
+  data: TotpSetup;
+  status: 200;
+};
+
+export type postAuthMfaTotpSetupResponseSuccess = postAuthMfaTotpSetupResponse200 & {
+  headers: Headers;
+};
+export type postAuthMfaTotpSetupResponse = postAuthMfaTotpSetupResponseSuccess;
+
+export const getPostAuthMfaTotpSetupUrl = () => {
+  return `/api/v1/auth/mfa/totp/setup`;
+};
+
+/**
+ * Changing second factors requires a recent MFA verification (step-up).
+ */
+export const postAuthMfaTotpSetup = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthMfaTotpSetupResponse> => {
+  return customFetch<postAuthMfaTotpSetupResponse>(getPostAuthMfaTotpSetupUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostAuthMfaTotpSetupMutationKey = () => ['postAuthMfaTotpSetup'] as const;
+
+export const getPostAuthMfaTotpSetupMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthMfaTotpSetup>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthMfaTotpSetup>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPostAuthMfaTotpSetupMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthMfaTotpSetup>>,
+    void
+  > = () => {
+    return postAuthMfaTotpSetup(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthMfaTotpSetupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthMfaTotpSetup>>
+>;
+
+export type PostAuthMfaTotpSetupMutationError = unknown;
+
+export const usePostAuthMfaTotpSetup = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthMfaTotpSetup>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<Awaited<ReturnType<typeof postAuthMfaTotpSetup>>, TError, void, TContext> => {
+  return useMutation(getPostAuthMfaTotpSetupMutationOptions(options), queryClient);
+};
+
+export type deleteAuthMfaWebauthnResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteAuthMfaWebauthnResponseSuccess = deleteAuthMfaWebauthnResponse204 & {
+  headers: Headers;
+};
+export type deleteAuthMfaWebauthnResponse = deleteAuthMfaWebauthnResponseSuccess;
+
+export const getDeleteAuthMfaWebauthnUrl = (id: number) => {
+  return `/api/v1/auth/mfa/webauthn/${id}`;
+};
+
+/**
+ * Changing second factors requires a recent MFA verification (step-up).
+ */
+export const deleteAuthMfaWebauthn = async (
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<deleteAuthMfaWebauthnResponse> => {
+  return customFetch<deleteAuthMfaWebauthnResponse>(getDeleteAuthMfaWebauthnUrl(id), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteAuthMfaWebauthnMutationKey = () => ['deleteAuthMfaWebauthn'] as const;
+
+export const getDeleteAuthMfaWebauthnMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAuthMfaWebauthn>>,
+    TError,
+    DeleteAuthMfaWebauthnMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAuthMfaWebauthn>>,
+  TError,
+  DeleteAuthMfaWebauthnMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteAuthMfaWebauthnMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAuthMfaWebauthn>>,
+    DeleteAuthMfaWebauthnMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAuthMfaWebauthn(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAuthMfaWebauthnMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAuthMfaWebauthn>>
+>;
+
+export type DeleteAuthMfaWebauthnMutationError = unknown;
+export type DeleteAuthMfaWebauthnMutationVariables = { id: number };
+
+export const useDeleteAuthMfaWebauthn = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteAuthMfaWebauthn>>,
+      TError,
+      DeleteAuthMfaWebauthnMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAuthMfaWebauthn>>,
+  TError,
+  DeleteAuthMfaWebauthnMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteAuthMfaWebauthnMutationOptions(options), queryClient);
+};
+
+export type postAuthMfaWebauthnRegisterOptionsResponse200 = {
+  data: WebAuthnOptions;
+  status: 200;
+};
+
+export type postAuthMfaWebauthnRegisterOptionsResponseSuccess =
+  postAuthMfaWebauthnRegisterOptionsResponse200 & {
+    headers: Headers;
+  };
+export type postAuthMfaWebauthnRegisterOptionsResponse =
+  postAuthMfaWebauthnRegisterOptionsResponseSuccess;
+
+export const getPostAuthMfaWebauthnRegisterOptionsUrl = () => {
+  return `/api/v1/auth/mfa/webauthn/register/options`;
+};
+
+/**
+ * Changing second factors requires a recent MFA verification (step-up).
+ */
+export const postAuthMfaWebauthnRegisterOptions = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthMfaWebauthnRegisterOptionsResponse> => {
+  return customFetch<postAuthMfaWebauthnRegisterOptionsResponse>(
+    getPostAuthMfaWebauthnRegisterOptionsUrl(),
+    {
+      ...options,
+      method: 'POST',
+    },
+  );
+};
+
+export const getPostAuthMfaWebauthnRegisterOptionsMutationKey = () =>
+  ['postAuthMfaWebauthnRegisterOptions'] as const;
+
+export const getPostAuthMfaWebauthnRegisterOptionsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterOptions>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterOptions>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPostAuthMfaWebauthnRegisterOptionsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterOptions>>,
+    void
+  > = () => {
+    return postAuthMfaWebauthnRegisterOptions(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthMfaWebauthnRegisterOptionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterOptions>>
+>;
+
+export type PostAuthMfaWebauthnRegisterOptionsMutationError = unknown;
+
+export const usePostAuthMfaWebauthnRegisterOptions = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterOptions>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterOptions>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPostAuthMfaWebauthnRegisterOptionsMutationOptions(options), queryClient);
+};
+
+export type postAuthMfaWebauthnRegisterVerifyResponse200 = {
+  data: MfaStatus;
+  status: 200;
+};
+
+export type postAuthMfaWebauthnRegisterVerifyResponseSuccess =
+  postAuthMfaWebauthnRegisterVerifyResponse200 & {
+    headers: Headers;
+  };
+export type postAuthMfaWebauthnRegisterVerifyResponse =
+  postAuthMfaWebauthnRegisterVerifyResponseSuccess;
+
+export const getPostAuthMfaWebauthnRegisterVerifyUrl = () => {
+  return `/api/v1/auth/mfa/webauthn/register/verify`;
+};
+
+/**
+ * Changing second factors requires a recent MFA verification (step-up).
+ */
+export const postAuthMfaWebauthnRegisterVerify = async (
+  webAuthnRegister: WebAuthnRegister,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthMfaWebauthnRegisterVerifyResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthMfaWebauthnRegisterVerifyResponse>(
+    getPostAuthMfaWebauthnRegisterVerifyUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+      body: JSON.stringify(webAuthnRegister),
+    },
+  );
+};
+
+export const getPostAuthMfaWebauthnRegisterVerifyMutationKey = () =>
+  ['postAuthMfaWebauthnRegisterVerify'] as const;
+
+export const getPostAuthMfaWebauthnRegisterVerifyMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterVerify>>,
+    TError,
+    PostAuthMfaWebauthnRegisterVerifyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterVerify>>,
+  TError,
+  PostAuthMfaWebauthnRegisterVerifyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthMfaWebauthnRegisterVerifyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterVerify>>,
+    PostAuthMfaWebauthnRegisterVerifyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthMfaWebauthnRegisterVerify(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthMfaWebauthnRegisterVerifyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterVerify>>
+>;
+export type PostAuthMfaWebauthnRegisterVerifyMutationBody = WebAuthnRegister;
+export type PostAuthMfaWebauthnRegisterVerifyMutationError = unknown;
+export type PostAuthMfaWebauthnRegisterVerifyMutationVariables = { data: WebAuthnRegister };
+
+export const usePostAuthMfaWebauthnRegisterVerify = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterVerify>>,
+      TError,
+      PostAuthMfaWebauthnRegisterVerifyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthMfaWebauthnRegisterVerify>>,
+  TError,
+  PostAuthMfaWebauthnRegisterVerifyMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostAuthMfaWebauthnRegisterVerifyMutationOptions(options), queryClient);
+};
+
 export type postAuthSessionLoginResponse200 = {
-  data: User;
+  data: SessionAuthFlow;
   status: 200;
 };
 
@@ -173,7 +955,7 @@ export const getPostAuthSessionLoginUrl = () => {
 };
 
 /**
- * Unauthenticated auth endpoint that reports failures as 401 with a generic message.
+ * Password step. Does not sign in: a second factor must follow.
  */
 export const postAuthSessionLogin = async (
   sessionLogin: SessionLogin,
@@ -351,8 +1133,830 @@ export const usePostAuthSessionLogout = <TError = unknown, TContext = unknown>(
   return useMutation(getPostAuthSessionLogoutMutationOptions(options), queryClient);
 };
 
+export type postAuthSessionMfaTotpConfirmResponse200 = {
+  data: SessionAuthFlow;
+  status: 200;
+};
+
+export type postAuthSessionMfaTotpConfirmResponseSuccess =
+  postAuthSessionMfaTotpConfirmResponse200 & {
+    headers: Headers;
+  };
+export type postAuthSessionMfaTotpConfirmResponse = postAuthSessionMfaTotpConfirmResponseSuccess;
+
+export const getPostAuthSessionMfaTotpConfirmUrl = () => {
+  return `/api/v1/auth/session/mfa/totp/confirm`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthSessionMfaTotpConfirm = async (
+  totpConfirm: TotpConfirm,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthSessionMfaTotpConfirmResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthSessionMfaTotpConfirmResponse>(getPostAuthSessionMfaTotpConfirmUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(totpConfirm),
+  });
+};
+
+export const getPostAuthSessionMfaTotpConfirmMutationKey = () =>
+  ['postAuthSessionMfaTotpConfirm'] as const;
+
+export const getPostAuthSessionMfaTotpConfirmMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthSessionMfaTotpConfirm>>,
+    TError,
+    PostAuthSessionMfaTotpConfirmMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthSessionMfaTotpConfirm>>,
+  TError,
+  PostAuthSessionMfaTotpConfirmMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthSessionMfaTotpConfirmMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthSessionMfaTotpConfirm>>,
+    PostAuthSessionMfaTotpConfirmMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthSessionMfaTotpConfirm(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthSessionMfaTotpConfirmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthSessionMfaTotpConfirm>>
+>;
+export type PostAuthSessionMfaTotpConfirmMutationBody = TotpConfirm;
+export type PostAuthSessionMfaTotpConfirmMutationError = unknown;
+export type PostAuthSessionMfaTotpConfirmMutationVariables = { data: TotpConfirm };
+
+export const usePostAuthSessionMfaTotpConfirm = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthSessionMfaTotpConfirm>>,
+      TError,
+      PostAuthSessionMfaTotpConfirmMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthSessionMfaTotpConfirm>>,
+  TError,
+  PostAuthSessionMfaTotpConfirmMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostAuthSessionMfaTotpConfirmMutationOptions(options), queryClient);
+};
+
+export type postAuthSessionMfaTotpSetupResponse200 = {
+  data: TotpSetup;
+  status: 200;
+};
+
+export type postAuthSessionMfaTotpSetupResponseSuccess = postAuthSessionMfaTotpSetupResponse200 & {
+  headers: Headers;
+};
+export type postAuthSessionMfaTotpSetupResponse = postAuthSessionMfaTotpSetupResponseSuccess;
+
+export const getPostAuthSessionMfaTotpSetupUrl = () => {
+  return `/api/v1/auth/session/mfa/totp/setup`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthSessionMfaTotpSetup = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthSessionMfaTotpSetupResponse> => {
+  return customFetch<postAuthSessionMfaTotpSetupResponse>(getPostAuthSessionMfaTotpSetupUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostAuthSessionMfaTotpSetupMutationKey = () =>
+  ['postAuthSessionMfaTotpSetup'] as const;
+
+export const getPostAuthSessionMfaTotpSetupMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthSessionMfaTotpSetup>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthSessionMfaTotpSetup>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPostAuthSessionMfaTotpSetupMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthSessionMfaTotpSetup>>,
+    void
+  > = () => {
+    return postAuthSessionMfaTotpSetup(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthSessionMfaTotpSetupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthSessionMfaTotpSetup>>
+>;
+
+export type PostAuthSessionMfaTotpSetupMutationError = unknown;
+
+export const usePostAuthSessionMfaTotpSetup = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthSessionMfaTotpSetup>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthSessionMfaTotpSetup>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPostAuthSessionMfaTotpSetupMutationOptions(options), queryClient);
+};
+
+export type postAuthSessionMfaVerifyResponse200 = {
+  data: SessionAuthFlow;
+  status: 200;
+};
+
+export type postAuthSessionMfaVerifyResponseSuccess = postAuthSessionMfaVerifyResponse200 & {
+  headers: Headers;
+};
+export type postAuthSessionMfaVerifyResponse = postAuthSessionMfaVerifyResponseSuccess;
+
+export const getPostAuthSessionMfaVerifyUrl = () => {
+  return `/api/v1/auth/session/mfa/verify`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthSessionMfaVerify = async (
+  mfaVerify: MfaVerify,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthSessionMfaVerifyResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthSessionMfaVerifyResponse>(getPostAuthSessionMfaVerifyUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mfaVerify),
+  });
+};
+
+export const getPostAuthSessionMfaVerifyMutationKey = () => ['postAuthSessionMfaVerify'] as const;
+
+export const getPostAuthSessionMfaVerifyMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthSessionMfaVerify>>,
+    TError,
+    PostAuthSessionMfaVerifyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthSessionMfaVerify>>,
+  TError,
+  PostAuthSessionMfaVerifyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthSessionMfaVerifyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthSessionMfaVerify>>,
+    PostAuthSessionMfaVerifyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthSessionMfaVerify(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthSessionMfaVerifyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthSessionMfaVerify>>
+>;
+export type PostAuthSessionMfaVerifyMutationBody = MfaVerify;
+export type PostAuthSessionMfaVerifyMutationError = unknown;
+export type PostAuthSessionMfaVerifyMutationVariables = { data: MfaVerify };
+
+export const usePostAuthSessionMfaVerify = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthSessionMfaVerify>>,
+      TError,
+      PostAuthSessionMfaVerifyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthSessionMfaVerify>>,
+  TError,
+  PostAuthSessionMfaVerifyMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostAuthSessionMfaVerifyMutationOptions(options), queryClient);
+};
+
+export type postAuthSessionMfaWebauthnOptionsResponse200 = {
+  data: WebAuthnOptions;
+  status: 200;
+};
+
+export type postAuthSessionMfaWebauthnOptionsResponseSuccess =
+  postAuthSessionMfaWebauthnOptionsResponse200 & {
+    headers: Headers;
+  };
+export type postAuthSessionMfaWebauthnOptionsResponse =
+  postAuthSessionMfaWebauthnOptionsResponseSuccess;
+
+export const getPostAuthSessionMfaWebauthnOptionsUrl = () => {
+  return `/api/v1/auth/session/mfa/webauthn/options`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthSessionMfaWebauthnOptions = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthSessionMfaWebauthnOptionsResponse> => {
+  return customFetch<postAuthSessionMfaWebauthnOptionsResponse>(
+    getPostAuthSessionMfaWebauthnOptionsUrl(),
+    {
+      ...options,
+      method: 'POST',
+    },
+  );
+};
+
+export const getPostAuthSessionMfaWebauthnOptionsMutationKey = () =>
+  ['postAuthSessionMfaWebauthnOptions'] as const;
+
+export const getPostAuthSessionMfaWebauthnOptionsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthSessionMfaWebauthnOptions>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnOptions>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPostAuthSessionMfaWebauthnOptionsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthSessionMfaWebauthnOptions>>,
+    void
+  > = () => {
+    return postAuthSessionMfaWebauthnOptions(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthSessionMfaWebauthnOptionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnOptions>>
+>;
+
+export type PostAuthSessionMfaWebauthnOptionsMutationError = unknown;
+
+export const usePostAuthSessionMfaWebauthnOptions = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthSessionMfaWebauthnOptions>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnOptions>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPostAuthSessionMfaWebauthnOptionsMutationOptions(options), queryClient);
+};
+
+export type postAuthSessionMfaWebauthnRegisterOptionsResponse200 = {
+  data: WebAuthnOptions;
+  status: 200;
+};
+
+export type postAuthSessionMfaWebauthnRegisterOptionsResponseSuccess =
+  postAuthSessionMfaWebauthnRegisterOptionsResponse200 & {
+    headers: Headers;
+  };
+export type postAuthSessionMfaWebauthnRegisterOptionsResponse =
+  postAuthSessionMfaWebauthnRegisterOptionsResponseSuccess;
+
+export const getPostAuthSessionMfaWebauthnRegisterOptionsUrl = () => {
+  return `/api/v1/auth/session/mfa/webauthn/register/options`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthSessionMfaWebauthnRegisterOptions = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthSessionMfaWebauthnRegisterOptionsResponse> => {
+  return customFetch<postAuthSessionMfaWebauthnRegisterOptionsResponse>(
+    getPostAuthSessionMfaWebauthnRegisterOptionsUrl(),
+    {
+      ...options,
+      method: 'POST',
+    },
+  );
+};
+
+export const getPostAuthSessionMfaWebauthnRegisterOptionsMutationKey = () =>
+  ['postAuthSessionMfaWebauthnRegisterOptions'] as const;
+
+export const getPostAuthSessionMfaWebauthnRegisterOptionsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterOptions>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterOptions>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPostAuthSessionMfaWebauthnRegisterOptionsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterOptions>>,
+    void
+  > = () => {
+    return postAuthSessionMfaWebauthnRegisterOptions(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthSessionMfaWebauthnRegisterOptionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterOptions>>
+>;
+
+export type PostAuthSessionMfaWebauthnRegisterOptionsMutationError = unknown;
+
+export const usePostAuthSessionMfaWebauthnRegisterOptions = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterOptions>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterOptions>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(
+    getPostAuthSessionMfaWebauthnRegisterOptionsMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type postAuthSessionMfaWebauthnRegisterVerifyResponse200 = {
+  data: SessionAuthFlow;
+  status: 200;
+};
+
+export type postAuthSessionMfaWebauthnRegisterVerifyResponseSuccess =
+  postAuthSessionMfaWebauthnRegisterVerifyResponse200 & {
+    headers: Headers;
+  };
+export type postAuthSessionMfaWebauthnRegisterVerifyResponse =
+  postAuthSessionMfaWebauthnRegisterVerifyResponseSuccess;
+
+export const getPostAuthSessionMfaWebauthnRegisterVerifyUrl = () => {
+  return `/api/v1/auth/session/mfa/webauthn/register/verify`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthSessionMfaWebauthnRegisterVerify = async (
+  webAuthnRegister: WebAuthnRegister,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthSessionMfaWebauthnRegisterVerifyResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthSessionMfaWebauthnRegisterVerifyResponse>(
+    getPostAuthSessionMfaWebauthnRegisterVerifyUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+      body: JSON.stringify(webAuthnRegister),
+    },
+  );
+};
+
+export const getPostAuthSessionMfaWebauthnRegisterVerifyMutationKey = () =>
+  ['postAuthSessionMfaWebauthnRegisterVerify'] as const;
+
+export const getPostAuthSessionMfaWebauthnRegisterVerifyMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterVerify>>,
+    TError,
+    PostAuthSessionMfaWebauthnRegisterVerifyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterVerify>>,
+  TError,
+  PostAuthSessionMfaWebauthnRegisterVerifyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthSessionMfaWebauthnRegisterVerifyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterVerify>>,
+    PostAuthSessionMfaWebauthnRegisterVerifyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthSessionMfaWebauthnRegisterVerify(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthSessionMfaWebauthnRegisterVerifyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterVerify>>
+>;
+export type PostAuthSessionMfaWebauthnRegisterVerifyMutationBody = WebAuthnRegister;
+export type PostAuthSessionMfaWebauthnRegisterVerifyMutationError = unknown;
+export type PostAuthSessionMfaWebauthnRegisterVerifyMutationVariables = { data: WebAuthnRegister };
+
+export const usePostAuthSessionMfaWebauthnRegisterVerify = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterVerify>>,
+      TError,
+      PostAuthSessionMfaWebauthnRegisterVerifyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthSessionMfaWebauthnRegisterVerify>>,
+  TError,
+  PostAuthSessionMfaWebauthnRegisterVerifyMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getPostAuthSessionMfaWebauthnRegisterVerifyMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type postAuthStepUpResponse200 = {
+  data: StepUpResponse;
+  status: 200;
+};
+
+export type postAuthStepUpResponseSuccess = postAuthStepUpResponse200 & {
+  headers: Headers;
+};
+export type postAuthStepUpResponse = postAuthStepUpResponseSuccess;
+
+export const getPostAuthStepUpUrl = () => {
+  return `/api/v1/auth/step-up`;
+};
+
+export const postAuthStepUp = async (
+  mfaVerify: MfaVerify,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthStepUpResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthStepUpResponse>(getPostAuthStepUpUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mfaVerify),
+  });
+};
+
+export const getPostAuthStepUpMutationKey = () => ['postAuthStepUp'] as const;
+
+export const getPostAuthStepUpMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthStepUp>>,
+    TError,
+    PostAuthStepUpMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthStepUp>>,
+  TError,
+  PostAuthStepUpMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthStepUpMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthStepUp>>,
+    PostAuthStepUpMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthStepUp(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthStepUpMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthStepUp>>>;
+export type PostAuthStepUpMutationBody = MfaVerify;
+export type PostAuthStepUpMutationError = unknown;
+export type PostAuthStepUpMutationVariables = { data: MfaVerify };
+
+export const usePostAuthStepUp = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthStepUp>>,
+      TError,
+      PostAuthStepUpMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthStepUp>>,
+  TError,
+  PostAuthStepUpMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostAuthStepUpMutationOptions(options), queryClient);
+};
+
+export type postAuthStepUpWebauthnOptionsResponse200 = {
+  data: WebAuthnOptions;
+  status: 200;
+};
+
+export type postAuthStepUpWebauthnOptionsResponseSuccess =
+  postAuthStepUpWebauthnOptionsResponse200 & {
+    headers: Headers;
+  };
+export type postAuthStepUpWebauthnOptionsResponse = postAuthStepUpWebauthnOptionsResponseSuccess;
+
+export const getPostAuthStepUpWebauthnOptionsUrl = () => {
+  return `/api/v1/auth/step-up/webauthn/options`;
+};
+
+export const postAuthStepUpWebauthnOptions = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthStepUpWebauthnOptionsResponse> => {
+  return customFetch<postAuthStepUpWebauthnOptionsResponse>(getPostAuthStepUpWebauthnOptionsUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostAuthStepUpWebauthnOptionsMutationKey = () =>
+  ['postAuthStepUpWebauthnOptions'] as const;
+
+export const getPostAuthStepUpWebauthnOptionsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthStepUpWebauthnOptions>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthStepUpWebauthnOptions>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPostAuthStepUpWebauthnOptionsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthStepUpWebauthnOptions>>,
+    void
+  > = () => {
+    return postAuthStepUpWebauthnOptions(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthStepUpWebauthnOptionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthStepUpWebauthnOptions>>
+>;
+
+export type PostAuthStepUpWebauthnOptionsMutationError = unknown;
+
+export const usePostAuthStepUpWebauthnOptions = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthStepUpWebauthnOptions>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthStepUpWebauthnOptions>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPostAuthStepUpWebauthnOptionsMutationOptions(options), queryClient);
+};
+
 export type postAuthTokenResponse200 = {
-  data: MobileTokenResponse;
+  data: MobileAuthFlow;
   status: 200;
 };
 
@@ -366,7 +1970,7 @@ export const getPostAuthTokenUrl = () => {
 };
 
 /**
- * Unauthenticated auth endpoint that reports failures as 401 with a generic message.
+ * Password step. Never returns tokens: complete it with a second factor.
  */
 export const postAuthToken = async (
   mobileCredentials: MobileCredentials,
@@ -570,6 +2174,346 @@ export const usePostAuthTokenLogout = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getPostAuthTokenLogoutMutationOptions(options), queryClient);
+};
+
+export type postAuthTokenMfaTotpConfirmResponse200 = {
+  data: MobileTokenResponse;
+  status: 200;
+};
+
+export type postAuthTokenMfaTotpConfirmResponseSuccess = postAuthTokenMfaTotpConfirmResponse200 & {
+  headers: Headers;
+};
+export type postAuthTokenMfaTotpConfirmResponse = postAuthTokenMfaTotpConfirmResponseSuccess;
+
+export const getPostAuthTokenMfaTotpConfirmUrl = () => {
+  return `/api/v1/auth/token/mfa/totp/confirm`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthTokenMfaTotpConfirm = async (
+  mobileTotpConfirm: MobileTotpConfirm,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthTokenMfaTotpConfirmResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthTokenMfaTotpConfirmResponse>(getPostAuthTokenMfaTotpConfirmUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mobileTotpConfirm),
+  });
+};
+
+export const getPostAuthTokenMfaTotpConfirmMutationKey = () =>
+  ['postAuthTokenMfaTotpConfirm'] as const;
+
+export const getPostAuthTokenMfaTotpConfirmMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthTokenMfaTotpConfirm>>,
+    TError,
+    PostAuthTokenMfaTotpConfirmMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthTokenMfaTotpConfirm>>,
+  TError,
+  PostAuthTokenMfaTotpConfirmMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthTokenMfaTotpConfirmMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthTokenMfaTotpConfirm>>,
+    PostAuthTokenMfaTotpConfirmMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthTokenMfaTotpConfirm(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthTokenMfaTotpConfirmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthTokenMfaTotpConfirm>>
+>;
+export type PostAuthTokenMfaTotpConfirmMutationBody = MobileTotpConfirm;
+export type PostAuthTokenMfaTotpConfirmMutationError = unknown;
+export type PostAuthTokenMfaTotpConfirmMutationVariables = { data: MobileTotpConfirm };
+
+export const usePostAuthTokenMfaTotpConfirm = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthTokenMfaTotpConfirm>>,
+      TError,
+      PostAuthTokenMfaTotpConfirmMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthTokenMfaTotpConfirm>>,
+  TError,
+  PostAuthTokenMfaTotpConfirmMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostAuthTokenMfaTotpConfirmMutationOptions(options), queryClient);
+};
+
+export type postAuthTokenMfaTotpSetupResponse200 = {
+  data: TotpSetup;
+  status: 200;
+};
+
+export type postAuthTokenMfaTotpSetupResponseSuccess = postAuthTokenMfaTotpSetupResponse200 & {
+  headers: Headers;
+};
+export type postAuthTokenMfaTotpSetupResponse = postAuthTokenMfaTotpSetupResponseSuccess;
+
+export const getPostAuthTokenMfaTotpSetupUrl = () => {
+  return `/api/v1/auth/token/mfa/totp/setup`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthTokenMfaTotpSetup = async (
+  mobileChallenge: MobileChallenge,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthTokenMfaTotpSetupResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthTokenMfaTotpSetupResponse>(getPostAuthTokenMfaTotpSetupUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mobileChallenge),
+  });
+};
+
+export const getPostAuthTokenMfaTotpSetupMutationKey = () => ['postAuthTokenMfaTotpSetup'] as const;
+
+export const getPostAuthTokenMfaTotpSetupMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthTokenMfaTotpSetup>>,
+    TError,
+    PostAuthTokenMfaTotpSetupMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthTokenMfaTotpSetup>>,
+  TError,
+  PostAuthTokenMfaTotpSetupMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthTokenMfaTotpSetupMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthTokenMfaTotpSetup>>,
+    PostAuthTokenMfaTotpSetupMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthTokenMfaTotpSetup(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthTokenMfaTotpSetupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthTokenMfaTotpSetup>>
+>;
+export type PostAuthTokenMfaTotpSetupMutationBody = MobileChallenge;
+export type PostAuthTokenMfaTotpSetupMutationError = unknown;
+export type PostAuthTokenMfaTotpSetupMutationVariables = { data: MobileChallenge };
+
+export const usePostAuthTokenMfaTotpSetup = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthTokenMfaTotpSetup>>,
+      TError,
+      PostAuthTokenMfaTotpSetupMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthTokenMfaTotpSetup>>,
+  TError,
+  PostAuthTokenMfaTotpSetupMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostAuthTokenMfaTotpSetupMutationOptions(options), queryClient);
+};
+
+export type postAuthTokenMfaVerifyResponse200 = {
+  data: MobileTokenResponse;
+  status: 200;
+};
+
+export type postAuthTokenMfaVerifyResponseSuccess = postAuthTokenMfaVerifyResponse200 & {
+  headers: Headers;
+};
+export type postAuthTokenMfaVerifyResponse = postAuthTokenMfaVerifyResponseSuccess;
+
+export const getPostAuthTokenMfaVerifyUrl = () => {
+  return `/api/v1/auth/token/mfa/verify`;
+};
+
+/**
+ * Unauthenticated step of the sign-in flow; failures are generic 401s.
+ */
+export const postAuthTokenMfaVerify = async (
+  mobileMfaVerify: MobileMfaVerify,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<postAuthTokenMfaVerifyResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<postAuthTokenMfaVerifyResponse>(getPostAuthTokenMfaVerifyUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mobileMfaVerify),
+  });
+};
+
+export const getPostAuthTokenMfaVerifyMutationKey = () => ['postAuthTokenMfaVerify'] as const;
+
+export const getPostAuthTokenMfaVerifyMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthTokenMfaVerify>>,
+    TError,
+    PostAuthTokenMfaVerifyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthTokenMfaVerify>>,
+  TError,
+  PostAuthTokenMfaVerifyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPostAuthTokenMfaVerifyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthTokenMfaVerify>>,
+    PostAuthTokenMfaVerifyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthTokenMfaVerify(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthTokenMfaVerifyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthTokenMfaVerify>>
+>;
+export type PostAuthTokenMfaVerifyMutationBody = MobileMfaVerify;
+export type PostAuthTokenMfaVerifyMutationError = unknown;
+export type PostAuthTokenMfaVerifyMutationVariables = { data: MobileMfaVerify };
+
+export const usePostAuthTokenMfaVerify = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthTokenMfaVerify>>,
+      TError,
+      PostAuthTokenMfaVerifyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthTokenMfaVerify>>,
+  TError,
+  PostAuthTokenMfaVerifyMutationVariables,
+  TContext
+> => {
+  return useMutation(getPostAuthTokenMfaVerifyMutationOptions(options), queryClient);
 };
 
 export type postAuthTokenRefreshResponse200 = {

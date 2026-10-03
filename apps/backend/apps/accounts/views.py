@@ -3,6 +3,7 @@ from typing import Any, cast
 from django.contrib.auth import authenticate, logout
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -16,21 +17,18 @@ from rest_framework.views import APIView
 from apps.audit.models import AuditEvent
 from apps.audit.services import record_event
 
-from .auth_sessions import (
-    RefreshRejected,
-    end_mobile_session,
-    rotate_mobile_refresh,
-    start_mobile_session,
-    start_web_session,
-)
+from . import login_flow, mfa
+from .auth_sessions import RefreshRejected, end_mobile_session, rotate_mobile_refresh
 from .authentication import StaffSessionAuthentication
 from .models import User
 from .serializers import (
     CsrfTokenSerializer,
+    MobileAuthFlowSerializer,
     MobileCredentialsSerializer,
     MobileLogoutSerializer,
     MobileRefreshSerializer,
     MobileTokenResponseSerializer,
+    SessionAuthFlowSerializer,
     SessionLoginSerializer,
     UserSerializer,
 )
@@ -62,7 +60,23 @@ def verify_staff_credentials(request: Request, data: dict[str, Any], channel: st
             metadata={"channel": channel},
         )
         raise AuthenticationFailed(INVALID_CREDENTIALS)
+    record_event(
+        "auth.login.password_verified",
+        request=request,
+        actor=user,
+        target=user,
+        metadata={"channel": channel},
+    )
     return user
+
+
+def _status(stage: str) -> str:
+    return "mfa_required" if stage == login_flow.VERIFY else "mfa_enrollment_required"
+
+
+def _mobile_methods(user: User) -> list[str]:
+    """Mobile supports TOTP and recovery codes (no WebAuthn in Sprint 1)."""
+    return [method for method in mfa.enrolled_methods(user) if method != mfa.WEBAUTHN]
 
 
 class CurrentUserView(APIView):
@@ -72,29 +86,27 @@ class CurrentUserView(APIView):
         return Response(UserSerializer(user).data)
 
 
+@method_decorator(never_cache, name="dispatch")
 class MobileTokenObtainView(PublicAuthView):
     throttle_scope = "auth_token_obtain"
 
     @extend_schema(
         operation_id="postAuthToken",
         request=MobileCredentialsSerializer,
-        responses=MobileTokenResponseSerializer,
+        responses=MobileAuthFlowSerializer,
+        description="Password step. Never returns tokens: complete it with a second factor.",
     )
     def post(self, request: Request) -> Response:
         serializer = MobileCredentialsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = verify_staff_credentials(request, serializer.validated_data, "mobile")
-        tracked, tokens = start_mobile_session(request, user)
-        record_event(
-            "auth.login.success",
-            request=request,
-            actor=user,
-            target=tracked,
-            metadata={"channel": "mobile"},
+        stage, challenge = login_flow.begin_mobile(user)
+        return Response(
+            {"status": _status(stage), "methods": _mobile_methods(user), "challenge": challenge}
         )
-        return Response(tokens)
 
 
+@method_decorator(never_cache, name="dispatch")
 class MobileTokenRefreshView(PublicAuthView):
     throttle_scope = "auth_token_refresh"
 
@@ -138,7 +150,7 @@ class CsrfView(APIView):
         return Response({"csrfToken": get_token(request._request)})
 
 
-@method_decorator(csrf_protect, name="dispatch")
+@method_decorator([csrf_protect, never_cache], name="dispatch")
 class SessionLoginView(PublicAuthView):
     throttle_scope = "auth_session_login"
 
@@ -148,21 +160,15 @@ class SessionLoginView(PublicAuthView):
     @extend_schema(
         operation_id="postAuthSessionLogin",
         request=SessionLoginSerializer,
-        responses=UserSerializer,
+        responses=SessionAuthFlowSerializer,
+        description="Password step. Does not sign in: a second factor must follow.",
     )
     def post(self, request: Request) -> Response:
         serializer = SessionLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = verify_staff_credentials(request, serializer.validated_data, "web")
-        tracked = start_web_session(request._request, user)
-        record_event(
-            "auth.login.success",
-            request=request,
-            actor=user,
-            target=tracked,
-            metadata={"channel": "web"},
-        )
-        return Response(UserSerializer(user).data)
+        stage = login_flow.begin_web(request._request, user)
+        return Response({"status": _status(stage), "methods": mfa.enrolled_methods(user)})
 
 
 @method_decorator(csrf_protect, name="dispatch")

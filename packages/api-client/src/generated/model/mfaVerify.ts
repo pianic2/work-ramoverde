@@ -5,9 +5,11 @@
  * Versioned REST contract shared by the RamoVerde web and mobile clients.
  * OpenAPI spec version: 1.0.0
  */
+import type { MfaMethodEnum } from './mfaMethodEnum';
 
-export interface MobileCredentials {
-  email: string;
-  /** @maxLength 4096 */
-  password: string;
+export interface MfaVerify {
+  method: MfaMethodEnum;
+  /** @maxLength 32 */
+  code?: string;
+  credential?: unknown;
 }

@@ -195,6 +195,43 @@ SIMPLE_JWT.update(
     }
 )
 MOBILE_SESSION_MAX_AGE = timedelta(days=int(os.getenv("MOBILE_SESSION_MAX_AGE_DAYS", "30")))
+# Every staff endpoint requires an MFA-verified tracked session unless it opts out explicitly.
+REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = ["apps.accounts.permissions.IsStaffUser"]
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
+    **REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],  # type: ignore[dict-item]
+    "auth_mfa": "20/minute",
+}
+# Shared cache (throttles, lockout, single-use MFA challenges) must be visible to every
+# worker: PostgreSQL-backed, table created by migration apps.core 0001.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache",
+    }
+}
+# MFA (WR-15): mandatory for every staff account. WebAuthn preferred, TOTP fallback.
+MFA_SECRET_KEY = os.getenv("MFA_SECRET_KEY", SECRET_KEY)
+MFA_ISSUER = "RamoVerde"
+MFA_PENDING_TTL_SECONDS = 5 * 60
+STEP_UP_MAX_AGE = timedelta(minutes=int(os.getenv("STEP_UP_MAX_AGE_MINUTES", "5")))
+WEBAUTHN_RP_ID = os.getenv("WEBAUTHN_RP_ID", "localhost")
+WEBAUTHN_RP_NAME = "RamoVerde"
+WEBAUTHN_ORIGINS = [
+    value
+    for value in os.getenv("WEBAUTHN_ORIGINS", "http://localhost:5180,http://localhost:5173").split(
+        ","
+    )
+    if value
+]
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"] = {
+    **SPECTACULAR_SETTINGS.get("ENUM_NAME_OVERRIDES", {}),  # type: ignore[dict-item]
+    "MfaMethodEnum": "apps.accounts.serializers.MFA_METHODS",
+    "MobileMfaMethodEnum": "apps.accounts.serializers.MOBILE_MFA_METHODS",
+    "AuthFlowStatusEnum": "apps.accounts.serializers.AUTH_FLOW_STATUSES",
+}
+AUTH_LOCKOUT_THRESHOLD = 5
+AUTH_LOCKOUT_BASE_SECONDS = 60
+AUTH_LOCKOUT_MAX_SECONDS = 60 * 60
 # Where Django admin and password-reset emails send people to sign in (React backoffice).
 STAFF_LOGIN_URL = os.getenv("STAFF_LOGIN_URL", "http://localhost:5180/admin/login")
 SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", str(8 * 60 * 60)))

@@ -8,5 +8,6 @@
 
 export interface SessionLogin {
   email: string;
+  /** @maxLength 4096 */
   password: string;
 }

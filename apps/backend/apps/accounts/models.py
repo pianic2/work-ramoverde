@@ -61,6 +61,10 @@ class UserSession(models.Model):
     user_agent = models.CharField(max_length=512, blank=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
     revoked_reason = models.CharField(max_length=64, blank=True)
+    # Second factor that created the session and the time of the latest MFA check
+    # (sign-in or step-up). Staff permissions require it; sensitive actions require it recent.
+    mfa_method = models.CharField(max_length=16, blank=True)
+    mfa_verified_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-last_seen_at", "-id"]
@@ -72,3 +76,57 @@ class UserSession(models.Model):
     @property
     def is_active(self) -> bool:
         return self.revoked_at is None
+
+
+class TOTPDevice(models.Model):
+    """RFC 6238 authenticator app. The shared secret is encrypted at rest (see `mfa.py`)."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="totp_devices")
+    encrypted_secret = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Highest accepted time step: a code is never accepted twice (replay protection).
+    last_used_step = models.BigIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(confirmed_at__isnull=False),
+                name="accounts_one_confirmed_totp_per_user",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"TOTP device {self.pk}"
+
+
+class RecoveryCode(models.Model):
+    """Single-use recovery code, stored only as a keyed HMAC-SHA256 digest."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recovery_codes")
+    code_hash = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"Recovery code {self.pk}"
+
+
+class WebAuthnCredential(models.Model):
+    """Passkey / security key registered through WebAuthn (preferred second factor)."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="webauthn_credentials")
+    credential_id = models.CharField(max_length=1024, unique=True)  # base64url
+    public_key = models.BinaryField()
+    sign_count = models.PositiveBigIntegerField(default=0)
+    transports = models.JSONField(default=list, blank=True)
+    name = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+    def __str__(self) -> str:
+        return self.name

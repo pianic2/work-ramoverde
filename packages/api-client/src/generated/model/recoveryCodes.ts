@@ -6,8 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface MobileCredentials {
-  email: string;
-  /** @maxLength 4096 */
-  password: string;
+export interface RecoveryCodes {
+  recovery_codes: string[];
 }
