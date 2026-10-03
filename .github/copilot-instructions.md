@@ -1,0 +1,1 @@
+Follow the repository-root `AGENTS.md` and the nearest scoped `AGENTS.md`. OpenAPI is the API source of truth. Generated files are regenerated, not edited. Reuse the personal React Native library before adding native UI primitives.

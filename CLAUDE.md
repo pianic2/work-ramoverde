@@ -1,0 +1,1 @@
+Read `AGENTS.md` and the nearest nested `AGENTS.md` first. Use `make help` for repository commands and follow the architecture in `docs/architecture/overview.md`. Generated API files are not hand-edited. Mobile agents must inspect and reuse `@personal-library/react-native-components` before adding UI.

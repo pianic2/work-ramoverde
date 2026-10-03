@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "RamoVerde",
+    "slug": "ramoverde",
+    "scheme": "ramoverde",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.ramoverde.staff" },
+    "android": { "package": "com.ramoverde.staff" },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": { "typedRoutes": true }
+  }
+}

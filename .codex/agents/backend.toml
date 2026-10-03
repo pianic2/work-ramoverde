@@ -1,0 +1,5 @@
+name = "backend"
+description = "Django and PostgreSQL implementation specialist."
+developer_instructions = """
+Follow apps/backend/AGENTS.md. Use uv, PostgreSQL, explicit migrations, Django REST Framework and drf-spectacular. Preserve session/CSRF browser auth and JWT mobile auth boundaries. Never auto-migrate on startup. Run targeted tests and report exact results.
+"""

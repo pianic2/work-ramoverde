@@ -1,0 +1,1 @@
+{"extends":"@ramoverde/typescript-config/base.json","include":["src"]}
