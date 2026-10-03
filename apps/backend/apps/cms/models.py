@@ -8,12 +8,31 @@ from django.utils import timezone
 from apps.media.models import MediaAsset
 from apps.media.validators import validate_multiline_plain_text, validate_plain_text
 
-from .sections import LATEST_VERSIONS, SectionType, url_error, validate_section
+from .sections import LATEST_VERSIONS, SectionType, media_ids, url_error, validate_section
 
 
 def validate_canonical_url(value: str) -> None:
     if not value.lower().startswith("https://") or url_error(value):
         raise ValidationError("Canonical URL must be an absolute https:// URL.")
+
+
+def _stored_value(instance: models.Model, attname: str) -> Any:
+    """Value of `attname` currently in the database (None for unsaved rows)."""
+    if instance.pk is None:
+        return None
+    return (
+        type(instance)
+        ._default_manager.filter(pk=instance.pk)
+        .values_list(attname, flat=True)
+        .first()
+    )
+
+
+def validate_changed_public_media(instance: models.Model, field: str) -> None:
+    """Check a media FK only when it changes, so later rejection never blocks other edits."""
+    asset = getattr(instance, field)
+    if asset is not None and asset.pk != _stored_value(instance, f"{field}_id"):
+        validate_public_media(asset, field)
 
 
 def validate_public_media(asset: MediaAsset | None, field: str) -> None:
@@ -66,8 +85,8 @@ class Page(models.Model):
         super().save(*args, **kwargs)
 
     def clean(self) -> None:
-        validate_public_media(self.og_image, "og_image")
-        if self.status == self.Status.PUBLISHED and self.pk is not None:
+        validate_changed_public_media(self, "og_image")
+        if self.status == self.Status.PUBLISHED:
             from .services import publication_errors
 
             errors = publication_errors(self)
@@ -99,11 +118,30 @@ class PageSection(models.Model):
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         # Validation also runs on plain ORM saves so no write path can store unsafe content.
-        self.content = validate_section(self.type, self.schema_version, self.variant, self.content)
+        self._validate_content()
         super().save(*args, **kwargs)
 
     def clean(self) -> None:
-        self.content = validate_section(self.type, self.schema_version, self.variant, self.content)
+        self._validate_content()
+
+    def _validate_content(self) -> None:
+        self.content = validate_section(
+            self.type,
+            self.schema_version,
+            self.variant,
+            self.content,
+            already_referenced=self._stored_media_ids(),
+        )
+
+    def _stored_media_ids(self) -> set[int]:
+        if self.pk is None:
+            return set()
+        stored = (
+            PageSection.objects.filter(pk=self.pk)
+            .values_list("type", "schema_version", "content")
+            .first()
+        )
+        return media_ids(*stored) if stored else set()
 
     @staticmethod
     def latest_version(section_type: str) -> int:
@@ -292,4 +330,4 @@ class SEOSettings(SingletonModel):
         return "SEO settings"
 
     def clean(self) -> None:
-        validate_public_media(self.default_og_image, "default_og_image")
+        validate_changed_public_media(self, "default_og_image")

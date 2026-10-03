@@ -69,7 +69,7 @@ def _referenced_media(sections: Iterable[PageSection]) -> set[int]:
 
 def publication_errors(page: Page) -> list[str]:
     """Reasons why `page` cannot be served publicly (unapproved/non-public media)."""
-    sections = list(page.sections.filter(enabled=True))
+    sections = list(page.sections.filter(enabled=True)) if page.pk is not None else []
     ids = _referenced_media(sections)
     if page.og_image_id:
         ids.add(page.og_image_id)
@@ -204,3 +204,20 @@ def public_site_settings() -> dict[str, Any]:
         "allow_indexing": seo.allow_indexing,
     }
     return data
+
+
+def media_references(asset_id: int) -> list[str]:
+    """Where CMS content uses a media asset (receiver of `media.signals.collect_references`)."""
+    found = [
+        f"page '{slug}' (og image)"
+        for slug in Page.objects.filter(og_image_id=asset_id).values_list("slug", flat=True)
+    ]
+    if SEOSettings.objects.filter(default_og_image_id=asset_id).exists():
+        found.append("site SEO settings (default og image)")
+    # Section content is JSON: scan it with the schema (small table at MVP scale).
+    for section in PageSection.objects.select_related("page").only(
+        "id", "type", "schema_version", "content", "page__slug"
+    ):
+        if asset_id in media_ids(section.type, section.schema_version, section.content):
+            found.append(f"page '{section.page.slug}' section #{section.pk} ({section.type})")
+    return found

@@ -10,6 +10,8 @@ rows keep validating against the version they were written with.
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -43,27 +45,39 @@ class SectionType(models.TextChoices):
 _URL_MAX = 500
 
 
+_TEL = re.compile(r"^tel:\+?[0-9]{3,20}$", re.IGNORECASE)
+_MAILTO = re.compile(r"^mailto:[^@\s?&/]+@[^@\s?&/]+\.[^@\s?&/]+$", re.IGNORECASE)
+_ENCODED_SEPARATOR = re.compile(r"%(2f|5c)", re.IGNORECASE)
+
+
+def _has_invisible_characters(value: str) -> bool:
+    # Bidi overrides, zero-width and other format/control characters can disguise a URL.
+    return any(unicodedata.category(ch) in {"Cf", "Cc", "Zl", "Zp"} for ch in value)
+
+
 def url_error(value: str) -> str | None:
     """Allowed: site-relative paths ("/x"), anchors ("#x"), https URLs, tel: and mailto:."""
     if value != value.strip() or any(ch.isspace() for ch in value) or "\\" in value:
         return "URLs may not contain whitespace or backslashes."
+    if _has_invisible_characters(value):
+        return "URLs may not contain invisible or control characters."
     if plain_text_error(value):
         return "Unsafe URL."
     if value.startswith("//"):
         return "Protocol-relative URLs are not allowed."
     if value.startswith(("/", "#")):
+        if _ENCODED_SEPARATOR.search(value):
+            return "Encoded slashes or backslashes are not allowed."
         return None
     lowered = value.lower()
     if lowered.startswith("tel:"):
-        return (
-            None
-            if len(value) > 4 and all(c in "+0123456789" for c in value[4:])
-            else ("Invalid phone link.")
-        )
+        return None if _TEL.match(value) else "Invalid phone link."
     if lowered.startswith("mailto:"):
-        return None if "@" in value else "Invalid e-mail link."
+        return None if _MAILTO.match(value) else "Invalid e-mail link."
     parts = urlsplit(value)
-    if parts.scheme == "https" and parts.netloc:
+    if parts.scheme == "https" and parts.hostname:
+        if "@" in parts.netloc:
+            return "Credentials in URLs are not allowed."
         return None
     return "Only https://, site-relative (/...), #anchor, tel: and mailto: URLs are allowed."
 
@@ -146,8 +160,11 @@ class Boolean(Spec):
         return value
 
 
+_MAX_ID = 2**63 - 1  # PostgreSQL bigint
+
+
 def _is_positive_int(value: Any) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+    return isinstance(value, int) and not isinstance(value, bool) and 0 < value <= _MAX_ID
 
 
 @dataclass(frozen=True)
@@ -239,6 +256,7 @@ class ListOf(Spec):
             return value
         if not self.min_items <= len(value) <= self.max_items:
             ctx.add(path, f"Between {self.min_items} and {self.max_items} items.")
+            return value  # do not walk an oversized list
         for index, item in enumerate(value):
             self.item.clean(item, f"{path}[{index}]", ctx)
         return value
@@ -438,7 +456,10 @@ def get_schema(section_type: str, version: int) -> SectionSchema | None:
     return SECTION_SCHEMAS.get((section_type, version))
 
 
-def _check_media(refs: dict[str, int], ctx: Context) -> None:
+def _check_media(refs: dict[str, int], ctx: Context, already_referenced: set[int]) -> None:
+    # References already stored on the section are trusted: an asset that later became
+    # REJECTED must never block disabling or editing the section (public output hides it).
+    refs = {path: asset_id for path, asset_id in refs.items() if asset_id not in already_referenced}
     if not refs:
         return
     assets = MediaAsset.objects.in_bulk(set(refs.values()))
@@ -452,8 +473,18 @@ def _check_media(refs: dict[str, int], ctx: Context) -> None:
             ctx.add(path, "This media asset was rejected for publication.")
 
 
-def validate_section(section_type: str, version: int, variant: str, content: Any) -> Any:
-    """Validate a section; return the content unchanged or raise a Django ValidationError."""
+def validate_section(
+    section_type: str,
+    version: int,
+    variant: str,
+    content: Any,
+    already_referenced: set[int] | None = None,
+) -> Any:
+    """Validate a section; return the content unchanged or raise a Django ValidationError.
+
+    `already_referenced`: media ids the stored version of the section already uses; only
+    newly added references are checked for PUBLIC / not REJECTED.
+    """
     if section_type not in LATEST_VERSIONS:
         raise ValidationError({"type": [f"Unknown section type {section_type!r}."]})
     schema = get_schema(section_type, version)
@@ -466,7 +497,7 @@ def validate_section(section_type: str, version: int, variant: str, content: Any
     ctx = Context(errors={}, media_refs={})
     schema.content.clean(content, "content", ctx)
     if not ctx.errors:
-        _check_media(ctx.media_refs, ctx)
+        _check_media(ctx.media_refs, ctx, already_referenced or set())
     if ctx.errors:
         messages = [f"{path}: {msg}" for path, msgs in ctx.errors.items() for msg in msgs]
         raise ValidationError({"content": messages})
