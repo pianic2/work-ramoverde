@@ -24,35 +24,31 @@ All Django apps live in `apps/backend/apps/<module>/`. A module is created only 
 
 ## Dependency rule
 
-A module may import only from the modules listed for it (plus itself, Django, DRF and third-party packages). Arrows point from the importer to the dependency.
+A module may import only from the modules listed for it (plus itself, Django, DRF and third-party packages). This table is the exact rule enforced by `ALLOWED_DEPENDENCIES` in the boundary test. **Kernel** = `core`, `audit`, `accounts`, `notifications`.
 
-```mermaid
-flowchart BT
-  core
-  audit --> core
-  notifications --> core
-  accounts --> audit
-  media --> accounts
-  services --> media
-  certifications --> media
-  projects --> services
-  customers --> accounts
-  conversations --> media
-  conversations --> customers
-  leads --> conversations
-  leads --> services
-  inspections --> leads
-  cms --> projects
-  cms --> certifications
-```
+| Module | May depend on |
+| --- | --- |
+| `core` | — |
+| `audit` | `core` |
+| `notifications` | `core` |
+| `accounts` | `core`, `audit`, `notifications` |
+| `media` | kernel |
+| `services` | kernel, `media` |
+| `certifications` | kernel, `media` |
+| `projects` | kernel, `services`, `media` |
+| `customers` | kernel |
+| `conversations` | kernel, `customers`, `media` |
+| `leads` | kernel, `conversations`, `customers`, `services`, `media` |
+| `inspections` | kernel, `leads`, `customers`, `services`, `media` |
+| `cms` | kernel, `projects`, `services`, `certifications`, `media` |
 
-Every module may also use `core`, `audit`, `accounts` and `notifications` (the shared "kernel": infrastructure, audit trail, identity/authorization, event publishing). `audit` and `notifications` may import only `core`; `core` imports no module.
+The test detects every dependency form: absolute and relative imports (`from ..cms import models`), `from apps import cms`, `importlib.import_module("apps.cms...")`, string model references in `ForeignKey`/`OneToOneField`/`ManyToManyField` (`"cms.Page"`) and `apps.get_model("cms", ...)`. It also proves the allowed graph is acyclic.
 
 Consequences:
 
 - `cms` can reference services, projects, certifications and media to compose public pages, but none of those may import `cms`.
 - `conversations` is generic; `leads` owns the link to its conversation, so creating a lead can create a conversation without a cycle.
-- Cross-module relations to the user model use `settings.AUTH_USER_MODEL`, never `from apps.accounts.models import User` in models.
+- Cross-module relations to the user model use `settings.AUTH_USER_MODEL` (in models) or `get_user_model()` (elsewhere).
 - A lower module that must react to a higher one does it through a published domain event (`notifications`) or a Django signal declared by the lower module, not by importing upward.
 
 ## Ownership rules for agents

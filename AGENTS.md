@@ -18,7 +18,7 @@
 
 ## Commands
 
-- Setup: `make setup`; configure a clone with `make init`.
+- Setup: `cp .env.example .env`, then `make setup`; database only: `make db`.
 - Run: `make dev`; stop with `make down`; diagnose with `make doctor`.
 - Checks: `make lint`, `make typecheck`, `make test`, `make api-check`, `make check`.
 - Contract updates: `make api-schema`, then `make api-client`, then `make api-check`.

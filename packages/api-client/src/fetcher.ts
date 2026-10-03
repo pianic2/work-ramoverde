@@ -7,7 +7,7 @@ export type ApiConfiguration = {
   accessToken?: () => Promise<string | null>;
   refreshAccessToken?: () => Promise<string | null>;
 };
-let configuration: ApiConfiguration = { baseUrl: 'http://localhost:8000' };
+let configuration: ApiConfiguration = { baseUrl: 'http://localhost:8010' };
 
 export function configureApiClient(next: ApiConfiguration): void {
   configuration = next;

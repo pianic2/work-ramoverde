@@ -26,20 +26,60 @@ ALLOWED_DEPENDENCIES: dict[str, set[str]] = {
 }
 
 
-def imported_modules(path: Path) -> set[str]:
+MODEL_FIELDS = {"ForeignKey", "OneToOneField", "ManyToManyField"}
+
+
+def _module_of(dotted: str) -> str | None:
+    parts = dotted.split(".")
+    return parts[1] if len(parts) >= 2 and parts[0] == "apps" else None
+
+
+def _string_arg(node: ast.Call, position: int, keyword: str) -> str | None:
+    if len(node.args) > position and isinstance(node.args[position], ast.Constant):
+        value = node.args[position].value
+    else:
+        value = next(
+            (
+                k.value.value
+                for k in node.keywords
+                if k.arg == keyword and isinstance(k.value, ast.Constant)
+            ),
+            None,
+        )
+    return value if isinstance(value, str) else None
+
+
+def _call_name(node: ast.Call) -> str:
+    func = node.func
+    return func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", "")
+
+
+def imported_modules(path: Path, apps_dir: Path = APPS_DIR) -> set[str]:
+    """Modules referenced by imports, dynamic imports and "<app_label>.<Model>" strings."""
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    package = ["apps", *path.parent.relative_to(apps_dir).parts]
     found: set[str] = set()
     for node in ast.walk(tree):
-        names: list[str] = []
         if isinstance(node, ast.Import):
-            names = [alias.name for alias in node.names]
-        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
-            names = [node.module]
-        for name in names:
-            parts = name.split(".")
-            if len(parts) >= 2 and parts[0] == "apps":
-                found.add(parts[1])
-    return found
+            found.update(m for a in node.names if (m := _module_of(a.name)))
+        elif isinstance(node, ast.ImportFrom):
+            base = package[: len(package) - node.level + 1] if node.level else []
+            absolute = ".".join([*base, *([node.module] if node.module else [])])
+            if absolute == "apps":  # from apps import cms
+                found.update(alias.name for alias in node.names)
+            elif module := _module_of(absolute):
+                found.add(module)
+        elif isinstance(node, ast.Call):
+            name = _call_name(node)
+            if name == "import_module" and (target := _string_arg(node, 0, "name")):
+                found.update(m for m in [_module_of(target)] if m)
+            elif name in MODEL_FIELDS and (target := _string_arg(node, 0, "to")):
+                if "." in target:  # "app_label.Model"; bare names are same-module
+                    found.add(target.split(".")[0])
+            elif name == "get_model" and (target := _string_arg(node, 0, "app_label")):
+                found.add(target.split(".")[0])
+    # String references to Django/third-party labels (auth.Group, contenttypes...) are not ours.
+    return {module for module in found if module in ALLOWED_DEPENDENCIES}
 
 
 def module_dirs() -> list[Path]:
@@ -80,7 +120,38 @@ def test_allowed_graph_is_acyclic():
         visit(module, ())
 
 
-def test_detects_forbidden_import(tmp_path: Path):
-    sample = tmp_path / "views.py"
-    sample.write_text("from apps.cms.models import Page\nimport apps.leads.services\n")
-    assert imported_modules(sample) == {"cms", "leads"}
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from apps.cms.models import Page\n",
+        "import apps.cms.services\n",
+        "from apps import cms\n",
+        "from ..cms.models import Page\n",
+        "from ..cms import models\n",
+        "import importlib\nimportlib.import_module('apps.cms.models')\n",
+        "from django.db import models\nx = models.ForeignKey('cms.Page', on_delete=None)\n",
+        "from django.db import models\nx = models.ManyToManyField(to='cms.Page')\n",
+        "from django.apps import apps as registry\nregistry.get_model('cms', 'Page')\n",
+        "from django.apps import apps as registry\nregistry.get_model('cms.Page')\n",
+    ],
+)
+def test_detects_forbidden_dependency_forms(tmp_path: Path, source: str):
+    package = tmp_path / "apps" / "media"
+    package.mkdir(parents=True)
+    sample = package / "views.py"
+    sample.write_text(source)
+    assert "cms" in imported_modules(sample, apps_dir=tmp_path / "apps")
+
+
+def test_ignores_same_module_and_user_model_references(tmp_path: Path):
+    package = tmp_path / "apps" / "media"
+    package.mkdir(parents=True)
+    sample = package / "models.py"
+    sample.write_text(
+        "from django.conf import settings\nfrom django.db import models\n"
+        "from .storage import backend\n"
+        "a = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)\n"
+        "b = models.ForeignKey('self', on_delete=models.CASCADE)\n"
+        "c = models.ForeignKey('MediaAsset', on_delete=models.CASCADE)\n"
+    )
+    assert imported_modules(sample, apps_dir=tmp_path / "apps") == {"media"}

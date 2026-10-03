@@ -158,7 +158,6 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Versioned REST contract shared by the RamoVerde web and mobile clients.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SERVERS": [{"url": "http://localhost:8010"}],
 }
 LOGGING = {
     "version": 1,

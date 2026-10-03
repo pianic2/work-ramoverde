@@ -53,6 +53,7 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm exec eslint apps packages
+      - run: python3 scripts/validate_mobile_library.py
       - run: corepack pnpm --filter @ramoverde/api-client typecheck
       - run: corepack pnpm --filter @ramoverde/web typecheck
       - run: corepack pnpm --filter @ramoverde/shared typecheck
