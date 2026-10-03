@@ -1,16 +1,17 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 COMPOSE := docker compose
-BACKEND := cd apps/backend && uv run
-# Host-side PostgreSQL used by tests, schema generation and smoke checks. CI exports
-# POSTGRES_PORT=5432; locally the Compose service publishes 5440 (see .env.example).
+BACKEND = cd apps/backend && $(HOST_DB) uv run
+# Host-side PostgreSQL for tests, schema generation and smoke checks. CI sets DATABASE_URL;
+# locally the Compose service publishes 5440 (see .env.example). Passed only to the
+# recipes that need it (never exported globally, so production Compose guards still fire).
 POSTGRES_PORT ?= 5440
 DATABASE_URL ?= postgresql://app:app@localhost:$(POSTGRES_PORT)/app
-export DATABASE_URL
+HOST_DB := DATABASE_URL=$(DATABASE_URL)
 
 .PHONY: help setup db dev dev-email down logs reset doctor smoke \
         migrate migrations shell lint typecheck test check api-schema api-client api-check \
-        web-test web-e2e mobile-check docker-build format security-check
+        web-test web-e2e mobile-check docker-build format security-check live-check
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*##"}; /^[a-zA-Z_-]+:.*##/ {printf "%-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -50,7 +51,7 @@ shell: ## Open a Django shell
 	$(COMPOSE) exec backend python manage.py shell
 
 api-schema: ## Generate OpenAPI from Django
-	cd apps/backend && uv run python manage.py spectacular --file ../../openapi/openapi.yaml --validate
+	cd apps/backend && $(HOST_DB) uv run python manage.py spectacular --file ../../openapi/openapi.yaml --validate --fail-on-warn
 
 api-client: ## Generate TypeScript clients from the committed OpenAPI contract
 	corepack pnpm exec orval --config orval.config.ts
@@ -76,8 +77,7 @@ web-test: ## Run web unit and component tests
 web-e2e: ## Run the Playwright browser smoke test (requires installed Chromium)
 	corepack pnpm --filter @ramoverde/web test:e2e
 
-mobile-check: ## Validate Expo config, dependencies, types and Android Metro bundle
-	corepack pnpm --filter @ramoverde/mobile exec expo-doctor
+mobile-check: ## Validate mobile types, tests and Android Metro bundle (deterministic)
 	corepack pnpm --filter @ramoverde/mobile typecheck
 	corepack pnpm --filter @ramoverde/mobile test
 	EXPO_PUBLIC_API_URL=https://api.example.com/api/v1 corepack pnpm --filter @ramoverde/mobile exec expo export --platform android
@@ -86,8 +86,12 @@ security-check: ## Audit locked Python dependencies and high-severity production
 	cd apps/backend && uv audit --locked
 	corepack pnpm audit --prod --audit-level high
 
+live-check: ## Checks against live registries (advisories, Expo SDK patch expectations); may change without code changes
+	$(MAKE) security-check
+	corepack pnpm --filter @ramoverde/mobile exec expo-doctor
+
 test: ## Run backend, web, mobile, and repository script tests
-	cd apps/backend && uv run pytest
+	cd apps/backend && $(HOST_DB) uv run pytest
 	corepack pnpm --filter @ramoverde/web exec vitest run
 	corepack pnpm --filter @ramoverde/mobile test
 	python3 -m unittest discover -s scripts/tests -v
@@ -99,15 +103,15 @@ format: ## Format Python and TypeScript sources
 check: ## Run the repository quality gate (requires Docker for PostgreSQL)
 	$(MAKE) lint typecheck test api-check mobile-check
 	corepack pnpm --filter @ramoverde/web build
-	cd apps/backend && uv run python manage.py makemigrations --check --dry-run
-	cd apps/backend && DJANGO_SECRET_KEY=ci-only-not-a-secret-ci-only-not-a-secret-ci-only-not-a-secret DJANGO_ALLOWED_HOSTS=example.com DJANGO_CORS_ALLOWED_ORIGINS=https://example.com DJANGO_CSRF_TRUSTED_ORIGINS=https://example.com uv run python manage.py check --deploy --settings=config.settings.production
+	cd apps/backend && $(HOST_DB) uv run python manage.py makemigrations --check --dry-run
+	cd apps/backend && $(HOST_DB) DJANGO_SECRET_KEY=ci-only-not-a-secret-ci-only-not-a-secret-ci-only-not-a-secret DJANGO_ALLOWED_HOSTS=example.com DJANGO_CORS_ALLOWED_ORIGINS=https://example.com DJANGO_CSRF_TRUSTED_ORIGINS=https://example.com uv run python manage.py check --deploy --settings=config.settings.production
 	python3 scripts/validate_mobile_library.py
 	$(COMPOSE) config --quiet
 	DATABASE_URL=postgresql://app:ci-only@localhost:5432/app DJANGO_SECRET_KEY=ci-only-not-a-secret-ci-only-not-a-secret-ci-only-not-a-secret DJANGO_ALLOWED_HOSTS=example.com DJANGO_CORS_ALLOWED_ORIGINS=https://example.com DJANGO_CSRF_TRUSTED_ORIGINS=https://example.com VITE_API_BASE_URL=https://api.example.com/api/v1 $(COMPOSE) -f compose.production.yaml config --quiet
 	$(MAKE) smoke
 
 smoke: ## Migrate PostgreSQL, boot the API and assert database readiness
-	bash scripts/boot-smoke.sh
+	$(HOST_DB) bash scripts/boot-smoke.sh
 
 docker-build: ## Build production backend and web images
 	docker build --target production -f infra/docker/Dockerfile.backend -t ramoverde-backend:production .

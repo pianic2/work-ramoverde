@@ -124,12 +124,77 @@ if os.getenv("S3_STORAGE_ENABLED", "false").lower() == "true":
             "file_overwrite": False,
         },
     }
+
+# Media (WR-21): blobs live in object storage, never in PostgreSQL. Two logical storages keep
+# PUBLIC and PRIVATE assets apart; locally they are directories outside STATIC_ROOT that
+# Django never serves. In production S3_STORAGE_ENABLED switches both to S3/R2 buckets.
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", str(BASE_DIR / "mediafiles")))
+MEDIA_PUBLIC_BASE_URL = os.getenv("MEDIA_PUBLIC_BASE_URL", "/media/public/")
+MEDIA_MAX_UPLOAD_SIZE = int(os.getenv("MEDIA_MAX_UPLOAD_SIZE", str(15 * 1024 * 1024)))
+MEDIA_MAX_VIDEO_UPLOAD_SIZE = int(os.getenv("MEDIA_MAX_VIDEO_UPLOAD_SIZE", str(200 * 1024 * 1024)))
+MEDIA_MAX_IMAGE_PIXELS = int(os.getenv("MEDIA_MAX_IMAGE_PIXELS", str(50_000_000)))
+MEDIA_PRIVATE_URL_TTL = int(os.getenv("MEDIA_PRIVATE_URL_TTL", "300"))
+# True when the private storage can sign short-lived URLs (S3/R2); otherwise downloads stream.
+MEDIA_PRIVATE_PRESIGNED_DOWNLOADS = False
+STORAGES["media_public"] = {
+    "BACKEND": "django.core.files.storage.FileSystemStorage",
+    "OPTIONS": {"location": MEDIA_ROOT / "public", "base_url": MEDIA_PUBLIC_BASE_URL},
+}
+STORAGES["media_private"] = {
+    "BACKEND": "django.core.files.storage.FileSystemStorage",
+    "OPTIONS": {"location": MEDIA_ROOT / "private"},
+}
+if os.getenv("S3_STORAGE_ENABLED", "false").lower() == "true":
+    _public_bucket = os.getenv("S3_PUBLIC_BUCKET_NAME") or os.environ["S3_BUCKET_NAME"]
+    _private_bucket = os.getenv("S3_PRIVATE_BUCKET_NAME") or os.environ["S3_BUCKET_NAME"]
+    if _public_bucket == _private_bucket:
+        # A bucket is either publicly readable or not: sharing one would expose private media
+        # (or hide public media). See docs/architecture/media.md.
+        raise RuntimeError(
+            "S3_PUBLIC_BUCKET_NAME and S3_PRIVATE_BUCKET_NAME must differ when "
+            "S3_STORAGE_ENABLED=true"
+        )
+    _s3_common = {
+        "endpoint_url": os.getenv("S3_ENDPOINT_URL") or None,
+        "access_key": os.getenv("S3_ACCESS_KEY_ID") or None,
+        "secret_key": os.getenv("S3_SECRET_ACCESS_KEY") or None,
+        "default_acl": None,
+        "file_overwrite": False,
+    }
+    STORAGES["media_public"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_s3_common,
+            "bucket_name": _public_bucket,
+            "location": os.getenv("S3_PUBLIC_LOCATION", "public"),
+            "custom_domain": os.getenv("S3_PUBLIC_CUSTOM_DOMAIN") or None,
+            "querystring_auth": False,
+        },
+    }
+    STORAGES["media_private"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_s3_common,
+            "bucket_name": _private_bucket,
+            "location": os.getenv("S3_PRIVATE_LOCATION", "private"),
+            "querystring_auth": True,
+            "querystring_expire": MEDIA_PRIVATE_URL_TTL,
+        },
+    }
+    MEDIA_PRIVATE_PRESIGNED_DOWNLOADS = True
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    # SafeJSONParser turns pathological nesting into a 400 for every endpoint (incl. anonymous).
+    "DEFAULT_PARSER_CLASSES": [
+        "apps.core.parsers.SafeJSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ],
     "DEFAULT_THROTTLE_RATES": {
         "auth_session_login": "10/minute",
         "auth_token_obtain": "10/minute",
@@ -152,7 +217,6 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Versioned REST contract shared by the RamoVerde web and mobile clients.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SERVERS": [{"url": "http://localhost:8010"}],
 }
 LOGGING = {
     "version": 1,

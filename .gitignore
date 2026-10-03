@@ -8,6 +8,7 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 .coverage
+.coverage.*
 htmlcov/
 apps/backend/staticfiles/
 db.sqlite3
@@ -25,4 +26,5 @@ test-results/
 *.log
 *.tsbuildinfo
 uv.lock.tmp
-.template-initialized.json
+.claude/worktrees/
+apps/backend/mediafiles/

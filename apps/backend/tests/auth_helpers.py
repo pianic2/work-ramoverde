@@ -51,6 +51,25 @@ def mfa_session_for(user: User, kind: str = UserSession.Kind.WEB) -> UserSession
     )
 
 
+def force_staff_login(client: Any, user: User) -> UserSession:
+    """Django-session login equivalent to a completed password + MFA sign-in (tests only),
+    e.g. for Django admin pages, which require a tracked, MFA-verified web session."""
+    from apps.accounts.auth_sessions import SESSION_ID_KEY
+
+    client.force_login(user)
+    session = client.session
+    tracked = UserSession.objects.create(
+        user=user,
+        kind=UserSession.Kind.WEB,
+        session_key=session.session_key,
+        mfa_method="totp",
+        mfa_verified_at=timezone.now(),
+    )
+    session[SESSION_ID_KEY] = tracked.pk
+    session.save()
+    return tracked
+
+
 def csrf_client() -> tuple[APIClient, str]:
     client = APIClient(enforce_csrf_checks=True, HTTP_USER_AGENT="Firefox/140 test")
     return client, client.get("/api/v1/auth/csrf").json()["csrfToken"]

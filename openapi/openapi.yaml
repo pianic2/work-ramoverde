@@ -679,6 +679,638 @@ paths:
               schema:
                 $ref: '#/components/schemas/MobileTokenResponse'
           description: ''
+  /api/v1/cms/navigation-menus:
+    get:
+      operationId: listCmsNavigationMenus
+      description: Navigation menus (header, footer...) with their items.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNavigationMenuList'
+          description: ''
+    post:
+      operationId: createCmsNavigationMenu
+      description: Navigation menus (header, footer...) with their items.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NavigationMenu'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationMenu'
+          description: ''
+  /api/v1/cms/navigation-menus/{menu_pk}/items:
+    get:
+      operationId: listCmsNavigationItems
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NavigationItem'
+          description: ''
+    post:
+      operationId: createCmsNavigationItem
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NavigationItem'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationItem'
+          description: ''
+  /api/v1/cms/navigation-menus/{menu_pk}/items/{id}:
+    get:
+      operationId: getCmsNavigationItem
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation item.
+        required: true
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationItem'
+          description: ''
+    patch:
+      operationId: updateCmsNavigationItem
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation item.
+        required: true
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNavigationItem'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationItem'
+          description: ''
+    delete:
+      operationId: deleteCmsNavigationItem
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation item.
+        required: true
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cms/navigation-menus/{id}:
+    get:
+      operationId: getCmsNavigationMenu
+      description: Navigation menus (header, footer...) with their items.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation menu.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationMenu'
+          description: ''
+    patch:
+      operationId: updateCmsNavigationMenu
+      description: Navigation menus (header, footer...) with their items.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation menu.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNavigationMenu'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationMenu'
+          description: ''
+    delete:
+      operationId: deleteCmsNavigationMenu
+      description: Navigation menus (header, footer...) with their items.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation menu.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cms/pages:
+    get:
+      operationId: listCmsPages
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPageList'
+          description: ''
+    post:
+      operationId: createCmsPage
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Page'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+  /api/v1/cms/pages/{page_pk}/sections:
+    get:
+      operationId: listCmsPageSections
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PageSection'
+          description: ''
+    post:
+      operationId: createCmsPageSection
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PageSection'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSection'
+          description: ''
+  /api/v1/cms/pages/{page_pk}/sections/{id}:
+    get:
+      operationId: getCmsPageSection
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page section.
+        required: true
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSection'
+          description: ''
+    patch:
+      operationId: updateCmsPageSection
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page section.
+        required: true
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPageSection'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSection'
+          description: ''
+    delete:
+      operationId: deleteCmsPageSection
+      description: Ordered sections of one page. New sections are appended; use `order`
+        to reorder.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page section.
+        required: true
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cms/pages/{page_pk}/sections/order:
+    put:
+      operationId: reorderCmsPageSections
+      description: '`section_ids` must list every section of the page exactly once.'
+      parameters:
+      - in: path
+        name: page_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SectionOrder'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PageSection'
+          description: ''
+  /api/v1/cms/pages/{id}:
+    get:
+      operationId: getCmsPage
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+    patch:
+      operationId: updateCmsPage
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPage'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+    delete:
+      operationId: deleteCmsPage
+      description: Staff page management. Drafts are visible here; changing `status`
+        needs publish rights.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this page.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cms/section-schemas:
+    get:
+      operationId: listCmsSectionSchemas
+      description: Catalogue of section types, versions, variants and content fields
+        (for editor UIs).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SectionSchema'
+          description: ''
+  /api/v1/cms/seo-settings:
+    get:
+      operationId: getCmsSeoSettings
+      description: GET / PATCH of a singleton settings row (staff + view/change model
+        permission).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SEOSettings'
+          description: ''
+    patch:
+      operationId: updateCmsSeoSettings
+      description: GET / PATCH of a singleton settings row (staff + view/change model
+        permission).
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSEOSettings'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SEOSettings'
+          description: ''
+  /api/v1/cms/site-settings:
+    get:
+      operationId: getCmsSiteSettings
+      description: GET / PATCH of a singleton settings row (staff + view/change model
+        permission).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteSettings'
+          description: ''
+    patch:
+      operationId: updateCmsSiteSettings
+      description: GET / PATCH of a singleton settings row (staff + view/change model
+        permission).
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSiteSettings'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteSettings'
+          description: ''
   /api/v1/health/live:
     get:
       operationId: getHealthLive
@@ -716,6 +1348,231 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/media/assets:
+    get:
+      operationId: listMediaAssets
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMediaAssetList'
+          description: ''
+    post:
+      operationId: createMediaAsset
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MediaAssetUpload'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+  /api/v1/media/assets/{id}:
+    get:
+      operationId: getMediaAsset
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media asset.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+    patch:
+      operationId: updateMediaAsset
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media asset.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMediaAssetUpdate'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+    delete:
+      operationId: deleteMediaAsset
+      description: Staff media library. Requires staff + `media.<action>_mediaasset`
+        permissions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media asset.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/media/assets/{id}/download:
+    get:
+      operationId: downloadMediaAsset
+      description: Download the blob as an attachment. Non-public blobs need the download
+        permission.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media asset.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '302':
+          description: Redirect to a short-lived signed URL (S3/R2).
+  /api/v1/public/media-assets:
+    get:
+      operationId: listPublicMediaAssets
+      description: 'Anonymous listing: only PUBLIC + APPROVED assets.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPublicMediaAssetList'
+          description: ''
+  /api/v1/public/navigation/{key}:
+    get:
+      operationId: getPublicNavigation
+      description: Visible items of a menu whose targets are published pages or safe
+        URLs.
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicNavigation'
+          description: ''
+  /api/v1/public/pages/{slug}:
+    get:
+      operationId: getPublicPage
+      description: Published page by slug with its enabled sections. Drafts and archived
+        pages are 404.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicPage'
+          description: ''
+  /api/v1/public/site-settings:
+    get:
+      operationId: getPublicSiteSettings
+      description: Public company data and SEO defaults. Unconfirmed values are null.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSiteSettings'
+          description: ''
   /api/v1/users/me:
     get:
       operationId: getUsersMe
@@ -743,6 +1600,16 @@ components:
         * `mfa_required` - Second factor required
         * `mfa_enrollment_required` - Second factor enrollment required
         * `authenticated` - Authenticated
+    AuthorizationStatusEnum:
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      type: string
+      description: |-
+        * `PENDING` - Pending review
+        * `APPROVED` - Approved for publication
+        * `REJECTED` - Rejected
     CsrfToken:
       type: object
       properties:
@@ -765,6 +1632,116 @@ components:
       description: |-
         * `web` - Web
         * `mobile` - Mobile
+    MediaAsset:
+      type: object
+      description: 'Staff representation: full metadata, never the blob itself.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        original_filename:
+          type: string
+          readOnly: true
+        mime_type:
+          type: string
+          readOnly: true
+        kind:
+          type: string
+          readOnly: true
+        size:
+          type: integer
+          readOnly: true
+        checksum_sha256:
+          type: string
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+        alt_text:
+          type: string
+          maxLength: 255
+        caption:
+          type: string
+          maxLength: 500
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        origin:
+          $ref: '#/components/schemas/OriginEnum'
+        source_note:
+          type: string
+          description: Author, licence or provenance of the file.
+          maxLength: 255
+        authorization_status:
+          allOf:
+          - $ref: '#/components/schemas/AuthorizationStatusEnum'
+          readOnly: true
+          description: |-
+            Public site usage requires APPROVED (photo publication rules are DA DEFINIRE).
+
+            * `PENDING` - Pending review
+            * `APPROVED` - Approved for publication
+            * `REJECTED` - Rejected
+        public_url:
+          type: string
+          nullable: true
+          readOnly: true
+        uploaded_by_email:
+          type: string
+          format: email
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - authorization_status
+      - checksum_sha256
+      - created_at
+      - height
+      - id
+      - kind
+      - mime_type
+      - original_filename
+      - public_url
+      - size
+      - updated_at
+      - uploaded_by_email
+      - width
+    MediaAssetUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uri
+        alt_text:
+          type: string
+          maxLength: 255
+        caption:
+          type: string
+          maxLength: 500
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityEnum'
+          default: PRIVATE
+        origin:
+          allOf:
+          - $ref: '#/components/schemas/OriginEnum'
+          default: STAFF_UPLOAD
+        source_note:
+          type: string
+          maxLength: 255
+      required:
+      - file
     MfaMethodEnum:
       enum:
       - totp
@@ -916,6 +1893,268 @@ components:
       required:
       - challenge
       - code
+    NavigationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        parent:
+          type: integer
+          nullable: true
+        label:
+          type: string
+          maxLength: 80
+        page:
+          type: integer
+          nullable: true
+        url:
+          type: string
+          default: ''
+          maxLength: 500
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        visible:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - label
+      - updated_at
+    NavigationMenu:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          description: e.g. header, footer
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          maxLength: 100
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationItem'
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - items
+      - key
+      - title
+      - updated_at
+    OriginEnum:
+      enum:
+      - STAFF_UPLOAD
+      - CLIENT_PROVIDED
+      - THIRD_PARTY
+      type: string
+      description: |-
+        * `STAFF_UPLOAD` - Uploaded by staff
+        * `CLIENT_PROVIDED` - Provided by the client
+        * `THIRD_PARTY` - Third party / licensed
+    Page:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        status:
+          $ref: '#/components/schemas/PageStatusEnum'
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        seo_title:
+          type: string
+          maxLength: 70
+        seo_description:
+          type: string
+          maxLength: 300
+        og_image:
+          type: integer
+          nullable: true
+        canonical_url:
+          type: string
+          maxLength: 500
+        noindex:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - published_at
+      - slug
+      - title
+      - updated_at
+    PageSection:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        variant:
+          type: string
+          maxLength: 40
+        position:
+          type: integer
+          readOnly: true
+        enabled:
+          type: boolean
+        schema_version:
+          type: integer
+          minimum: 1
+          description: Defaults to the latest version of the type.
+        content:
+          description: Section content; shape defined by the (type, schema_version)
+            schema.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content
+      - created_at
+      - id
+      - position
+      - type
+      - updated_at
+      - variant
+    PageStatusEnum:
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `PUBLISHED` - Published
+        * `ARCHIVED` - Archived
+    PaginatedMediaAssetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+    PaginatedNavigationMenuList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationMenu'
+    PaginatedPageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Page'
+    PaginatedPublicMediaAssetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicMediaAsset'
     PasswordChange:
       type: object
       properties:
@@ -968,6 +2207,485 @@ components:
           format: email
       required:
       - email
+    PatchedMediaAssetUpdate:
+      type: object
+      properties:
+        alt_text:
+          type: string
+          maxLength: 255
+        caption:
+          type: string
+          maxLength: 500
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        origin:
+          $ref: '#/components/schemas/OriginEnum'
+        source_note:
+          type: string
+          description: Author, licence or provenance of the file.
+          maxLength: 255
+        authorization_status:
+          allOf:
+          - $ref: '#/components/schemas/AuthorizationStatusEnum'
+          description: |-
+            Public site usage requires APPROVED (photo publication rules are DA DEFINIRE).
+
+            * `PENDING` - Pending review
+            * `APPROVED` - Approved for publication
+            * `REJECTED` - Rejected
+    PatchedNavigationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        parent:
+          type: integer
+          nullable: true
+        label:
+          type: string
+          maxLength: 80
+        page:
+          type: integer
+          nullable: true
+        url:
+          type: string
+          default: ''
+          maxLength: 500
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        visible:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedNavigationMenu:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          description: e.g. header, footer
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          maxLength: 100
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationItem'
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedPage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        status:
+          $ref: '#/components/schemas/PageStatusEnum'
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        seo_title:
+          type: string
+          maxLength: 70
+        seo_description:
+          type: string
+          maxLength: 300
+        og_image:
+          type: integer
+          nullable: true
+        canonical_url:
+          type: string
+          maxLength: 500
+        noindex:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedPageSection:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        variant:
+          type: string
+          maxLength: 40
+        position:
+          type: integer
+          readOnly: true
+        enabled:
+          type: boolean
+        schema_version:
+          type: integer
+          minimum: 1
+          description: Defaults to the latest version of the type.
+        content:
+          description: Section content; shape defined by the (type, schema_version)
+            schema.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedSEOSettings:
+      type: object
+      properties:
+        default_title:
+          type: string
+          maxLength: 70
+        default_description:
+          type: string
+          maxLength: 300
+        allow_indexing:
+          type: boolean
+          description: 'Off until launch: public pages are served with noindex.'
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        default_og_image:
+          type: integer
+          nullable: true
+    PatchedSiteSettings:
+      type: object
+      properties:
+        legal_name:
+          type: string
+          maxLength: 200
+        brand_name:
+          type: string
+          maxLength: 100
+        vat_number:
+          type: string
+          pattern: ^(IT)?\d{11}$
+          maxLength: 13
+        address:
+          type: string
+          maxLength: 300
+        phone:
+          type: string
+          pattern: ^\+?[0-9 ]{6,20}$
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        opening_hours:
+          type: string
+          maxLength: 300
+        tagline:
+          type: string
+          maxLength: 200
+        certifications_text:
+          type: string
+          maxLength: 500
+        primary_cta_label:
+          type: string
+          maxLength: 40
+        primary_cta_url:
+          type: string
+          maxLength: 500
+        footer_text:
+          type: string
+          maxLength: 1000
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        primary_cta_page:
+          type: integer
+          nullable: true
+    PublicMedia:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        mime_type:
+          type: string
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        alt_text:
+          type: string
+      required:
+      - alt_text
+      - height
+      - id
+      - mime_type
+      - url
+      - width
+    PublicMediaAsset:
+      type: object
+      description: Anonymous representation of a PUBLIC + APPROVED asset.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        mime_type:
+          type: string
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+        alt_text:
+          type: string
+          readOnly: true
+        caption:
+          type: string
+          readOnly: true
+      required:
+      - alt_text
+      - caption
+      - height
+      - id
+      - mime_type
+      - url
+      - width
+    PublicNavigation:
+      type: object
+      properties:
+        key:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicNavigationItem'
+      required:
+      - items
+      - key
+      - title
+    PublicNavigationItem:
+      type: object
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+          nullable: true
+          description: Safe URL target, if not a page.
+        page_slug:
+          type: string
+          nullable: true
+          description: Published CMS page target.
+          pattern: ^[-a-zA-Z0-9_]+$
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicNavigationLink'
+      required:
+      - children
+      - label
+      - page_slug
+      - url
+    PublicNavigationLink:
+      type: object
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+          nullable: true
+          description: Safe URL target, if not a page.
+        page_slug:
+          type: string
+          nullable: true
+          description: Published CMS page target.
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - label
+      - page_slug
+      - url
+    PublicPage:
+      type: object
+      properties:
+        slug:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        seo:
+          allOf:
+          - $ref: '#/components/schemas/PublicSeo'
+          readOnly: true
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSection'
+          readOnly: true
+      required:
+      - published_at
+      - sections
+      - seo
+      - slug
+      - title
+    PublicSection:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        variant:
+          type: string
+        schema_version:
+          type: integer
+        content:
+          type: object
+          additionalProperties: {}
+          description: Validated content; media ids are replaced by public media objects
+            (or null).
+      required:
+      - content
+      - id
+      - schema_version
+      - type
+      - variant
+    PublicSeo:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        canonical_url:
+          type: string
+          nullable: true
+        noindex:
+          type: boolean
+        og_image:
+          allOf:
+          - $ref: '#/components/schemas/PublicMedia'
+          nullable: true
+      required:
+      - canonical_url
+      - description
+      - noindex
+      - og_image
+      - title
+    PublicSeoDefaults:
+      type: object
+      properties:
+        default_title:
+          type: string
+          nullable: true
+        default_description:
+          type: string
+          nullable: true
+        default_og_image:
+          allOf:
+          - $ref: '#/components/schemas/PublicMedia'
+          nullable: true
+        allow_indexing:
+          type: boolean
+      required:
+      - allow_indexing
+      - default_description
+      - default_og_image
+      - default_title
+    PublicSiteSettings:
+      type: object
+      description: Unconfirmed (empty) values are null; never invented.
+      properties:
+        legal_name:
+          type: string
+          nullable: true
+        brand_name:
+          type: string
+          nullable: true
+        vat_number:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        opening_hours:
+          type: string
+          nullable: true
+        tagline:
+          type: string
+          nullable: true
+        certifications_text:
+          type: string
+          nullable: true
+        footer_text:
+          type: string
+          nullable: true
+        primary_cta:
+          allOf:
+          - $ref: '#/components/schemas/PublicNavigationLink'
+          nullable: true
+        seo:
+          $ref: '#/components/schemas/PublicSeoDefaults'
+      required:
+      - address
+      - brand_name
+      - certifications_text
+      - email
+      - footer_text
+      - legal_name
+      - opening_hours
+      - phone
+      - primary_cta
+      - seo
+      - tagline
+      - vat_number
     RecoveryCodes:
       type: object
       properties:
@@ -977,6 +2695,60 @@ components:
             type: string
       required:
       - recovery_codes
+    SEOSettings:
+      type: object
+      properties:
+        default_title:
+          type: string
+          maxLength: 70
+        default_description:
+          type: string
+          maxLength: 300
+        allow_indexing:
+          type: boolean
+          description: 'Off until launch: public pages are served with noindex.'
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        default_og_image:
+          type: integer
+          nullable: true
+      required:
+      - updated_at
+    SectionOrder:
+      type: object
+      properties:
+        section_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+      required:
+      - section_ids
+    SectionSchema:
+      type: object
+      properties:
+        type:
+          type: string
+        schema_version:
+          type: integer
+        latest:
+          type: boolean
+        variants:
+          type: array
+          items:
+            type: string
+        content_fields:
+          type: object
+          additionalProperties: {}
+          description: Content field name -> field description.
+      required:
+      - content_fields
+      - latest
+      - schema_version
+      - type
+      - variants
     SessionAuthFlow:
       type: object
       properties:
@@ -1008,6 +2780,57 @@ components:
       required:
       - email
       - password
+    SiteSettings:
+      type: object
+      properties:
+        legal_name:
+          type: string
+          maxLength: 200
+        brand_name:
+          type: string
+          maxLength: 100
+        vat_number:
+          type: string
+          pattern: ^(IT)?\d{11}$
+          maxLength: 13
+        address:
+          type: string
+          maxLength: 300
+        phone:
+          type: string
+          pattern: ^\+?[0-9 ]{6,20}$
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        opening_hours:
+          type: string
+          maxLength: 300
+        tagline:
+          type: string
+          maxLength: 200
+        certifications_text:
+          type: string
+          maxLength: 500
+        primary_cta_label:
+          type: string
+          maxLength: 40
+        primary_cta_url:
+          type: string
+          maxLength: 500
+        footer_text:
+          type: string
+          maxLength: 1000
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        primary_cta_page:
+          type: integer
+          nullable: true
+      required:
+      - updated_at
     StepUpResponse:
       type: object
       properties:
@@ -1035,6 +2858,30 @@ components:
       required:
       - otpauth_uri
       - secret
+    TypeEnum:
+      enum:
+      - hero
+      - services
+      - projects
+      - gallery
+      - text-media
+      - stats
+      - certifications
+      - cta
+      - contact
+      - territory
+      type: string
+      description: |-
+        * `hero` - Hero
+        * `services` - Services
+        * `projects` - Projects
+        * `gallery` - Gallery
+        * `text-media` - Text + media
+        * `stats` - Stats
+        * `certifications` - Certifications
+        * `cta` - Call to action
+        * `contact` - Contact
+        * `territory` - Territory
     User:
       type: object
       properties:
@@ -1108,6 +2955,14 @@ components:
       - last_seen_at
       - mfa_method
       - user_agent
+    VisibilityEnum:
+      enum:
+      - PUBLIC
+      - PRIVATE
+      type: string
+      description: |-
+        * `PUBLIC` - Public
+        * `PRIVATE` - Private
     WebAuthnCredential:
       type: object
       properties:
@@ -1158,5 +3013,3 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-servers:
-- url: http://localhost:8010

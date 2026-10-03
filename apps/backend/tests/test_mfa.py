@@ -503,3 +503,23 @@ def test_django_admin_password_form_still_cannot_bypass_mfa():
     client.post("/django-admin/login/", {"username": root.email, "password": PASSWORD})
     assert not Session.objects.exists()
     assert client.get("/django-admin/").status_code == 302
+
+
+@pytest.mark.django_db
+def test_cms_and_media_staff_apis_refuse_sessions_without_mfa():
+    from django.contrib.auth.models import Permission
+
+    user = create_staff()
+    enroll_totp(user)
+    user.user_permissions.add(
+        *Permission.objects.filter(codename__in=["view_page", "view_mediaasset"])
+    )
+    client, csrf = csrf_client()
+    web_password_step(client, csrf, user.email)  # password only, MFA pending
+    assert client.get("/api/v1/cms/pages").status_code == 401
+    assert client.get("/api/v1/media/assets").status_code == 401
+
+    forced = APIClient()
+    forced.force_authenticate(user=user)  # authenticated but no MFA-verified session
+    assert forced.get("/api/v1/cms/pages").status_code == 403
+    assert forced.get("/api/v1/media/assets").status_code == 403
