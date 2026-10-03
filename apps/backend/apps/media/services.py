@@ -6,6 +6,7 @@ never produces a public URL. `stored_publicly` records where the blob currently 
 """
 
 import uuid
+from collections.abc import Callable
 from typing import Any
 
 from django.conf import settings
@@ -13,9 +14,11 @@ from django.core.files.storage import Storage, storages
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.utils import timezone
+from django.utils.http import content_disposition_header
 
 from .inspection import inspect_upload
 from .models import MediaAsset
+from .signals import collect_references
 
 PUBLIC_STORAGE = "media_public"
 PRIVATE_STORAGE = "media_private"
@@ -44,10 +47,24 @@ def public_url(asset: MediaAsset) -> str | None:
 
 
 def private_download_url(asset: MediaAsset) -> str | None:
-    """Short-lived signed URL when the storage supports it (S3/R2), else None (stream)."""
-    if not settings.MEDIA_PRIVATE_PRESIGNED_DOWNLOADS:
+    """Short-lived signed URL for a non-public blob when the storage supports it (S3/R2).
+
+    The signature also pins the response headers so the browser always downloads the file
+    (attachment) with the sniffed Content-Type. Returns None when the file must be streamed.
+    """
+    if not settings.MEDIA_PRIVATE_PRESIGNED_DOWNLOADS or asset.stored_publicly:
         return None
-    return storage_for(asset).url(asset.object_key)
+    signer: Any = private_storage()  # S3Storage.url accepts response-header parameters
+    url: str = signer.url(
+        asset.object_key,
+        parameters={
+            "ResponseContentDisposition": content_disposition_header(
+                as_attachment=True, filename=asset.original_filename
+            ),
+            "ResponseContentType": asset.mime_type,
+        },
+    )
+    return url
 
 
 def _new_object_key(kind: str, extension: str) -> str:
@@ -84,9 +101,10 @@ def create_asset(
         authorization_status=authorization_status,
         uploaded_by=uploaded_by,
     )
-    asset.stored_publicly = asset.is_publicly_usable
+    # New blobs always land in private storage; publishing happens after commit.
+    asset.stored_publicly = False
     asset.full_clean(exclude=["object_key"])
-    storage = storage_for(asset)
+    storage = private_storage()
     upload.seek(0)
     saved_key = storage.save(asset.object_key, upload)
     asset.object_key = saved_key
@@ -95,43 +113,130 @@ def create_asset(
     except Exception:
         storage.delete(saved_key)
         raise
+    if asset.is_publicly_usable:
+        schedule_reconcile(asset.pk)
     return asset
 
 
-def _move_blob(asset: MediaAsset, *, to_public: bool) -> None:
-    source = public_storage() if asset.stored_publicly else private_storage()
-    target = public_storage() if to_public else private_storage()
-    with source.open(asset.object_key, "rb") as fh:
-        saved = target.save(asset.object_key, fh)
-    if saved != asset.object_key:  # never expected: keys are random and unique
-        target.delete(saved)
-        raise RuntimeError(f"Object key collision while moving {asset.object_key}")
-    source.delete(asset.object_key)
-    asset.stored_publicly = to_public
+class AssetInUse(Exception):
+    """The asset is referenced by published-facing content (see `signals.collect_references`)."""
+
+    def __init__(self, references: list[str]) -> None:
+        self.references = references
+        super().__init__("This media asset is still used by: " + "; ".join(references) + ".")
 
 
-@transaction.atomic
-def update_asset(asset: MediaAsset, **changes: Any) -> MediaAsset:
+def asset_references(asset_id: int) -> list[str]:
+    """Human-readable places that reference the asset, collected from other modules."""
+    found: list[str] = []
+    for _receiver, response in collect_references.send(sender=MediaAsset, asset_id=asset_id):
+        found.extend(response or [])
+    return found
+
+
+def _ensure_not_referenced(asset_id: int) -> None:
+    references = asset_references(asset_id)
+    if references:
+        raise AssetInUse(references)
+
+
+def schedule_reconcile(asset_id: int) -> None:
+    """Place the blob after the current transaction commits; nothing happens on rollback."""
+    transaction.on_commit(lambda: reconcile_storage(asset_id))
+
+
+def reconcile_storage(asset_id: int) -> None:
+    """Make the blob live in exactly the storage that matches the committed row.
+
+    Idempotent and safe to re-run: copies the blob into the right storage if missing,
+    records `stored_publicly`, then removes any copy left in the other storage.
+    """
+    with transaction.atomic():
+        try:
+            asset = MediaAsset.objects.select_for_update().get(pk=asset_id)
+        except MediaAsset.DoesNotExist:
+            return
+        key = asset.object_key
+        should_be_public = asset.is_publicly_usable
+        target = public_storage() if should_be_public else private_storage()
+        other = private_storage() if should_be_public else public_storage()
+        if not target.exists(key):
+            if not other.exists(key):
+                raise FileNotFoundError(f"Blob {key} is missing from both storages")
+            with other.open(key, "rb") as fh:
+                saved = target.save(key, fh)
+            if saved != key:  # never expected: keys are random and unique
+                target.delete(saved)
+                raise RuntimeError(f"Object key collision while moving {key}")
+        if asset.stored_publicly != should_be_public:
+            asset.stored_publicly = should_be_public
+            asset.save(update_fields=["stored_publicly", "updated_at"])
+        # Still under the row lock, so concurrent reconciles cannot delete each other's copy;
+        # the blob already exists in `target`, so dropping the stale copy is always safe.
+        if other.exists(key):
+            other.delete(key)
+
+
+APPROVE_PERMISSION = "media.approve_mediaasset"
+
+
+def required_permissions(current: MediaAsset, changes: dict[str, Any]) -> set[str]:
+    """Extra permissions needed for `changes` on top of `media.change_mediaasset`.
+
+    Approving/rejecting and turning an asset PUBLIC both decide what reaches the public
+    site, so both need approval rights.
+    """
+    needed: set[str] = set()
+    status = changes.get("authorization_status", current.authorization_status)
+    if status != current.authorization_status:
+        needed.add(APPROVE_PERMISSION)
+    visibility = changes.get("visibility", current.visibility)
+    if visibility == MediaAsset.Visibility.PUBLIC and current.visibility != visibility:
+        needed.add(APPROVE_PERMISSION)
+    return needed
+
+
+def update_asset(
+    asset: MediaAsset,
+    *,
+    authorize: Callable[[set[str]], None] | None = None,
+    **changes: Any,
+) -> MediaAsset:
+    """Apply metadata changes to the locked row (never a stale in-memory copy).
+
+    `authorize` receives the extra permissions required against the locked row and must
+    raise to refuse. The blob is moved only after commit (`schedule_reconcile`).
+    """
     unknown = set(changes) - EDITABLE_FIELDS
     if unknown:
         raise ValueError(f"Not editable: {sorted(unknown)}")
-    for field, value in changes.items():
-        setattr(asset, field, value)
-    asset.full_clean()
-    sync_storage_location(asset)
-    asset.save()
-    return asset
-
-
-def sync_storage_location(asset: MediaAsset) -> None:
-    """Move the blob so that it is public exactly when the asset is publicly usable."""
-    should_be_public = asset.is_publicly_usable
-    if asset.pk is not None and asset.stored_publicly != should_be_public:
-        _move_blob(asset, to_public=should_be_public)
+    with transaction.atomic():
+        locked = MediaAsset.objects.select_for_update().get(pk=asset.pk)
+        if authorize is not None:
+            authorize(required_permissions(locked, changes))
+        was_public = locked.visibility == MediaAsset.Visibility.PUBLIC
+        for field, value in changes.items():
+            setattr(locked, field, value)
+        locked.full_clean()
+        if was_public and locked.visibility == MediaAsset.Visibility.PRIVATE:
+            _ensure_not_referenced(locked.pk)
+        locked.save(update_fields=[*changes, "updated_at"])
+        if locked.stored_publicly != locked.is_publicly_usable:
+            schedule_reconcile(locked.pk)
+    locked.refresh_from_db()  # picks up `stored_publicly` once the move has run
+    return locked
 
 
 def delete_asset(asset: MediaAsset) -> None:
-    storage = storage_for(asset)
-    key = asset.object_key
-    asset.delete()
-    transaction.on_commit(lambda: storage.delete(key))
+    with transaction.atomic():
+        locked = MediaAsset.objects.select_for_update().get(pk=asset.pk)
+        _ensure_not_referenced(locked.pk)
+        key = locked.object_key
+        locked.delete()
+
+        def remove_blobs() -> None:
+            for storage in (public_storage(), private_storage()):
+                if storage.exists(key):
+                    storage.delete(key)
+
+        transaction.on_commit(remove_blobs)

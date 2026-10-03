@@ -6,13 +6,13 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
-from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsStaffUser, StaffModelPermissions
+from apps.media.parsers import SafeJSONParser
 
 from . import services
 from .models import NavigationItem, NavigationMenu, Page, PageSection, SEOSettings, SiteSettings
@@ -52,7 +52,7 @@ class StaffCrudViewSet(
     """CRUD without PUT; staff + Django model permissions (view perm required for reads)."""
 
     permission_classes = [StaffModelPermissions]
-    parser_classes = [JSONParser]
+    parser_classes = [SafeJSONParser]
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def perform_destroy(self, instance: Any) -> None:
@@ -134,7 +134,7 @@ class PageSectionOrderView(generics.GenericAPIView[PageSection]):
     """Replace the section order of a page (staff + `cms.change_pagesection`)."""
 
     permission_classes = [StaffModelPermissions]
-    parser_classes = [JSONParser]
+    parser_classes = [SafeJSONParser]
     pagination_class = None
     queryset = PageSection.objects.all()
     serializer_class = SectionOrderSerializer
@@ -248,7 +248,7 @@ class SingletonSettingsView(generics.GenericAPIView[Any]):
     """GET / PATCH of a singleton settings row (staff + view/change model permission)."""
 
     permission_classes = [StaffModelPermissions]
-    parser_classes = [JSONParser]
+    parser_classes = [SafeJSONParser]
     pagination_class = None
 
     def get_object(self) -> Any:

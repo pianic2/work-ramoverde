@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from django import forms
 from django.contrib import admin
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpRequest
 
 from . import services
@@ -38,6 +38,14 @@ class MediaAssetUploadForm(_ModelForm):
             except ValidationError as exc:
                 self.add_error("file", exc)
         return cleaned
+
+
+def _form_changes(form: forms.BaseForm) -> dict[str, Any]:
+    return {
+        field: form.cleaned_data[field]
+        for field in form.changed_data
+        if field in services.EDITABLE_FIELDS and field in form.cleaned_data
+    }
 
 
 @admin.register(MediaAsset)
@@ -77,7 +85,31 @@ class MediaAssetAdmin(_ModelAdmin):
     ) -> type[forms.ModelForm[MediaAsset]]:
         if obj is None:
             kwargs["form"] = MediaAssetUploadForm
-        return super().get_form(request, obj, change=change, **kwargs)
+            return super().get_form(request, obj, change=change, **kwargs)
+        base = super().get_form(request, obj, change=change, **kwargs)
+
+        class MediaAssetChangeForm(base):  # type: ignore[valid-type,misc]
+            """Same authorization and reference rules as the API, checked on the form."""
+
+            def clean(self) -> dict[str, Any]:
+                cleaned: dict[str, Any] = super().clean() or {}
+                changes = _form_changes(self)
+                needed = services.required_permissions(self.instance, changes)
+                if not all(request.user.has_perm(perm) for perm in needed):
+                    raise ValidationError(
+                        "Approving, rejecting or publishing media requires approval rights."
+                    )
+                going_private = (
+                    self.instance.visibility == MediaAsset.Visibility.PUBLIC
+                    and changes.get("visibility") == MediaAsset.Visibility.PRIVATE
+                )
+                if going_private:
+                    references = services.asset_references(self.instance.pk)
+                    if references:
+                        raise ValidationError(str(services.AssetInUse(references)))
+                return cleaned
+
+        return MediaAssetChangeForm
 
     def get_fields(self, request: HttpRequest, obj: MediaAsset | None = None) -> tuple[str, ...]:
         if obj is None:
@@ -110,12 +142,20 @@ class MediaAssetAdmin(_ModelAdmin):
             obj.pk = created.pk
             obj.refresh_from_db()
             return
-        services.sync_storage_location(obj)
-        obj.save()
+
+        def authorize(permissions: set[str]) -> None:
+            if not all(request.user.has_perm(perm) for perm in permissions):
+                raise PermissionDenied
+
+        services.update_asset(obj, authorize=authorize, **_form_changes(form))
+        obj.refresh_from_db()
 
     def delete_model(self, request: HttpRequest, obj: MediaAsset) -> None:
         services.delete_asset(obj)
 
     def has_delete_permission(self, request: HttpRequest, obj: MediaAsset | None = None) -> bool:
-        # Bulk deletes would bypass blob cleanup; delete one asset at a time.
-        return obj is not None and super().has_delete_permission(request, obj)
+        # Bulk deletes would bypass blob cleanup; delete one asset at a time, and never one
+        # that page content still uses.
+        if obj is None or not super().has_delete_permission(request, obj):
+            return False
+        return not services.asset_references(obj.pk)

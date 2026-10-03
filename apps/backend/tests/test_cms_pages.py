@@ -1,5 +1,5 @@
 import pytest
-from cms_media_helpers import make_asset, staff_user
+from cms_media_helpers import make_asset, run_on_commit, staff_user
 from django.core.exceptions import ValidationError
 from rest_framework.test import APIClient
 
@@ -318,6 +318,8 @@ def test_public_page_hides_media_that_stopped_being_public():
     image = make_asset()
     page = _page("home", status=Page.Status.PUBLISHED)
     _section(page, "hero", {"heading": "Benvenuti", "image": image.pk}, variant="split")
-    update_asset(image, visibility="PRIVATE")
+    # Referenced media cannot be made PRIVATE; rejecting it is the take-down path.
+    with run_on_commit():
+        update_asset(image, authorization_status="REJECTED")
     body = _client().get("/api/v1/public/pages/home").json()
     assert body["sections"][0]["content"]["image"] is None

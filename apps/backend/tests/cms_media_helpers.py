@@ -37,12 +37,25 @@ def staff_user(email: str, *codenames: str):
 def make_asset(
     *, visibility: str = "PUBLIC", authorization_status: str = "APPROVED", alt_text: str = "Alt"
 ):
+    from django.test import TestCase
+
+    from apps.media.models import MediaAsset
     from apps.media.services import create_asset
 
-    return create_asset(
-        upload=png_upload(),
-        uploaded_by=None,
-        visibility=visibility,
-        alt_text=alt_text,
-        authorization_status=authorization_status,
-    )
+    # Blobs are placed after commit; run those callbacks now inside test transactions.
+    with TestCase.captureOnCommitCallbacks(execute=True):
+        asset = create_asset(
+            upload=png_upload(),
+            uploaded_by=None,
+            visibility=visibility,
+            alt_text=alt_text,
+            authorization_status=authorization_status,
+        )
+    return MediaAsset.objects.get(pk=asset.pk)
+
+
+def run_on_commit():
+    """Context manager executing on_commit callbacks (blob moves) at block exit."""
+    from django.test import TestCase
+
+    return TestCase.captureOnCommitCallbacks(execute=True)

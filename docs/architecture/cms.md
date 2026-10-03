@@ -34,8 +34,10 @@ Rules enforced on every write:
 
 - Unknown keys rejected at every level; types checked (`bool` is not an int); string length limits.
 - **No HTML/JS/CSS anywhere**: text fields reject tags/comments (`<` followed by a letter, `/`, `!`, `?`), `javascript:`/`vbscript:`/`data:text/html`, control characters, and line breaks in single-line fields. Clients render content as text.
-- URLs: only `/path`, `#anchor`, `https://host/...`, `tel:+digits`, `mailto:`; no whitespace, backslashes or protocol-relative `//`.
-- Media: positive integer `MediaAsset` id that exists, is `PUBLIC` and not `REJECTED`. `PENDING` media may be used in drafts; **publishing** a page requires every referenced media (enabled sections + `og_image`) to be `PUBLIC` and `APPROVED`.
+- URLs: only `/path`, `#anchor`, `https://host/...` (no credentials), `tel:+digits` (3-20 digits), `mailto:local@domain.tld` (no query); no whitespace, backslashes, protocol-relative `//`, encoded `%2F`/`%5C` in relative paths, or invisible/bidi/control characters.
+- Media: positive integer `MediaAsset` id (bigint range) that exists, is `PUBLIC` and not `REJECTED`. The check applies only to references **added** by the write: ids already stored on the section (or an unchanged `og_image`) are trusted, so a later rejection never blocks disabling or editing a section (review F3). `PENDING` media may be used in drafts; **publishing** a page (on update **and** on create) requires every referenced media (enabled sections + `og_image`) to be `PUBLIC` and `APPROVED`.
+- Media used by CMS content cannot be deleted or made PRIVATE (409, via the `media.signals.collect_references` signal answered by `apps/cms/receivers.py`); rejecting it is the take-down path.
+- Lists longer than `max_items` are rejected without walking their items; hostile deeply nested JSON bodies are a 400 (`SafeJSONParser`).
 - `services` / `projects` / `certifications` references are id-list **placeholders** (unique positive ints). Those modules don't exist yet; the public API returns the ids unchanged and will resolve them when the modules land (no invented models).
 
 Where validation runs (so no path bypasses it): `PageSection.clean()` (Django admin inline forms), `PageSection.save()` (any ORM save), and the DRF serializer (`run_model_clean`). Reordering uses `bulk_update` of `position` only.
