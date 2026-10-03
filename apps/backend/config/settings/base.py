@@ -151,6 +151,15 @@ STORAGES["media_private"] = {
     "OPTIONS": {"location": MEDIA_ROOT / "private"},
 }
 if os.getenv("S3_STORAGE_ENABLED", "false").lower() == "true":
+    _public_bucket = os.getenv("S3_PUBLIC_BUCKET_NAME") or os.environ["S3_BUCKET_NAME"]
+    _private_bucket = os.getenv("S3_PRIVATE_BUCKET_NAME") or os.environ["S3_BUCKET_NAME"]
+    if _public_bucket == _private_bucket:
+        # A bucket is either publicly readable or not: sharing one would expose private media
+        # (or hide public media). See docs/architecture/media.md.
+        raise RuntimeError(
+            "S3_PUBLIC_BUCKET_NAME and S3_PRIVATE_BUCKET_NAME must differ when "
+            "S3_STORAGE_ENABLED=true"
+        )
     _s3_common = {
         "endpoint_url": os.getenv("S3_ENDPOINT_URL") or None,
         "access_key": os.getenv("S3_ACCESS_KEY_ID") or None,
@@ -162,7 +171,7 @@ if os.getenv("S3_STORAGE_ENABLED", "false").lower() == "true":
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             **_s3_common,
-            "bucket_name": os.getenv("S3_PUBLIC_BUCKET_NAME") or os.environ["S3_BUCKET_NAME"],
+            "bucket_name": _public_bucket,
             "location": os.getenv("S3_PUBLIC_LOCATION", "public"),
             "custom_domain": os.getenv("S3_PUBLIC_CUSTOM_DOMAIN") or None,
             "querystring_auth": False,
@@ -172,7 +181,7 @@ if os.getenv("S3_STORAGE_ENABLED", "false").lower() == "true":
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             **_s3_common,
-            "bucket_name": os.getenv("S3_PRIVATE_BUCKET_NAME") or os.environ["S3_BUCKET_NAME"],
+            "bucket_name": _private_bucket,
             "location": os.getenv("S3_PRIVATE_LOCATION", "private"),
             "querystring_auth": True,
             "querystring_expire": MEDIA_PRIVATE_URL_TTL,

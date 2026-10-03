@@ -24,7 +24,14 @@ Two Django storages configured in `config/settings/base.py`:
 - `media_public` — the only storage that ever produces anonymous URLs.
 - `media_private` — never exposes URLs to anonymous users.
 
-**Rule:** a blob lives in `media_public` exactly while its asset is `PUBLIC` **and** `APPROVED`. Uploads that are PRIVATE, PENDING or REJECTED land in `media_private`; approving, rejecting or changing visibility moves the blob (`services.sync_storage_location`). So an unapproved photo is never reachable through the public bucket, even by guessing a key.
+**Rule:** a blob lives in `media_public` exactly while its asset is `PUBLIC` **and** `APPROVED`. Uploads that are PRIVATE, PENDING or REJECTED land in `media_private`; approving, rejecting or changing visibility moves the blob. So an unapproved photo is never reachable through the public bucket, even by guessing a key.
+
+### Consistency between row and blob (review F1/F2)
+
+- `update_asset` locks the row (`SELECT ... FOR UPDATE`), applies the changes to the **locked** row and saves only the changed fields, so a stale in-memory copy can never overwrite a concurrent approval or visibility change. The API and the Django admin both go through it; permission checks run against the locked row.
+- Blobs are never moved inside the caller's transaction. After commit, `transaction.on_commit` runs `reconcile_storage(pk)`, which locks the committed row, copies the blob into the storage matching `PUBLIC AND APPROVED` if it is missing, records `stored_publicly`, then deletes the copy in the other storage, all under the row lock. A rollback therefore changes nothing. `reconcile_storage` is idempotent and also repairs leftovers from a crash between copy and delete.
+- New uploads always go to private storage first; an asset that is created already publicly usable is published by the same after-commit reconcile. A rolled-back upload can leave an orphan blob in **private** storage only (never exposed); a periodic sweep is a follow-up.
+- Between commit and reconcile (milliseconds) the public URL is withheld (`public_url` requires `stored_publicly`), and an asset just made PRIVATE may still be reachable at its old public URL for that instant.
 
 | Environment | `media_public` | `media_private` |
 | --- | --- | --- |
@@ -32,7 +39,7 @@ Two Django storages configured in `config/settings/base.py`:
 | Tests | `InMemoryStorage` | `InMemoryStorage` |
 | Production (`S3_STORAGE_ENABLED=true`, Cloudflare R2) | `S3Storage`, bucket `S3_PUBLIC_BUCKET_NAME` (fallback `S3_BUCKET_NAME`), prefix `S3_PUBLIC_LOCATION` (default `public`), unsigned URLs, optional `S3_PUBLIC_CUSTOM_DOMAIN` | `S3Storage`, bucket `S3_PRIVATE_BUCKET_NAME` (fallback `S3_BUCKET_NAME`), prefix `S3_PRIVATE_LOCATION` (default `private`), signed URLs valid `MEDIA_PRIVATE_URL_TTL` seconds (default 300) |
 
-Recommendation for R2: use **two buckets** (public bucket bound to a custom domain, private bucket with no public access). R2 cannot expose only one prefix of a bucket, so the single-bucket fallback is only acceptable if the bucket itself is private and public assets are served some other way. Requires the optional `storage` extra (`uv sync --extra storage`).
+R2 needs **two buckets** (public bucket bound to a custom domain, private bucket with no public access): a bucket is either public or not, so settings **refuse to start** when the resolved public and private bucket names are equal (review F8). `S3_BUCKET_NAME` remains required by the base storage block. Requires the optional `storage` extra (`uv sync --extra storage`).
 
 ## Upload validation (`inspection.py`)
 
@@ -52,12 +59,22 @@ The same inspection runs for API and Django admin uploads (admin `save_model` ca
 | `GET /api/v1/media/assets` | `listMediaAssets` | staff + `media.view_mediaasset` |
 | `POST /api/v1/media/assets` (multipart) | `createMediaAsset` | staff + `media.add_mediaasset` |
 | `GET /api/v1/media/assets/{id}` | `getMediaAsset` | staff + `media.view_mediaasset` |
-| `PATCH /api/v1/media/assets/{id}` | `updateMediaAsset` | staff + `media.change_mediaasset`; changing `authorization_status` also needs `media.approve_mediaasset` |
-| `DELETE /api/v1/media/assets/{id}` | `deleteMediaAsset` | staff + `media.delete_mediaasset`; 409 if still referenced (e.g. SEO og image) |
+| `PATCH /api/v1/media/assets/{id}` | `updateMediaAsset` | staff + `media.change_mediaasset`; changing `authorization_status` **or** making the asset `PUBLIC` also needs `media.approve_mediaasset` (API and admin); making a referenced asset PRIVATE answers 409 |
+| `DELETE /api/v1/media/assets/{id}` | `deleteMediaAsset` | staff + `media.delete_mediaasset`; 409 while referenced (section content, page og image, SEO default og image) |
 | `GET /api/v1/media/assets/{id}/download` | `downloadMediaAsset` | staff + `media.view_mediaasset`; blobs not in public storage also need `media.download_private_mediaasset` |
 | `GET /api/v1/public/media-assets` | `listPublicMediaAssets` | anonymous; only `PUBLIC` + `APPROVED` |
 
-Staff authorization uses `apps.accounts.permissions.StaffModelPermissions`. Download responses carry `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store` and a sandboxing CSP. With S3 the endpoint answers `302` to a short-lived signed URL (`MEDIA_PRIVATE_PRESIGNED_DOWNLOADS`), otherwise it streams the file.
+Staff authorization uses `apps.accounts.permissions.StaffModelPermissions`. Download responses carry `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store` and a sandboxing CSP. With S3 the endpoint answers `302` to a short-lived signed URL for non-public blobs (`MEDIA_PRIVATE_PRESIGNED_DOWNLOADS`); the signature pins `ResponseContentDisposition: attachment; filename=...` and `ResponseContentType` to the sniffed type, so the bucket response is always a download. Otherwise the endpoint streams the file.
+
+JSON bodies of media and CMS endpoints are parsed by `apps.media.parsers.SafeJSONParser`: absurdly nested documents become a 400 `ParseError` instead of a `RecursionError`/500.
+
+### References from other modules
+
+`media` cannot import `cms`. It declares the signal `apps.media.signals.collect_references`; `cms` connects a receiver (`apps/cms/receivers.py`) that lists section content, page og images and the SEO default og image using the asset. A non-empty answer blocks delete and PUBLIC→PRIVATE (`services.AssetInUse` → 409; the admin hides delete and shows a form error). To take a referenced photo down, **reject** it: the public API stops serving it immediately, and drafts keep working.
+
+### Polyglot files and public headers (accepted residual risk)
+
+A file can pass the signature and Pillow checks while also being valid in another format (e.g. JPEG+HTML polyglot). This is accepted: public objects are served with the stored, sniffed Content-Type (django-storages sets it from the server-generated key extension, which always matches the sniffed type), never as HTML. `X-Content-Type-Options: nosniff` cannot be stored as S3/R2 object metadata; configure it as a response-header rule on the public custom domain (Cloudflare Transform Rule) at deployment. Private downloads always send `nosniff` and `attachment`.
 
 ### Permission codenames (for RBAC role mapping)
 
@@ -67,5 +84,6 @@ Staff authorization uses `apps.accounts.permissions.StaffModelPermissions`. Down
 
 - No audit events yet (`audit.record_event` is WR-18); approval changes should be audited once it exists.
 - No antivirus scanning and no EXIF stripping.
-- Moving a blob between storages on approval is a copy + delete inside the request; very large videos make approval slow. Acceptable for MVP volumes.
+- Moving a blob between storages is a copy + delete right after commit in the request thread; very large videos make approval slow. Acceptable for MVP volumes.
+- The reference scan over section JSON is a Python loop over all sections: fine at MVP scale, replace with a reference table if pages grow to thousands.
 - Bulk delete is disabled in the admin so blobs are always cleaned up.

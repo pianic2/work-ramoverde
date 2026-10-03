@@ -216,7 +216,7 @@ def test_staff_list_requires_view_permission_and_shows_all():
     assert response.json()["count"] == 2
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_approval_requires_approve_permission():
     asset = make_asset(visibility="PUBLIC", authorization_status="PENDING")
     editor = staff_user("ed@example.com", "media.view_mediaasset", "media.change_mediaasset")
@@ -241,7 +241,7 @@ def test_approval_requires_approve_permission():
     assert not storages["media_private"].exists(asset.object_key)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_visibility_change_moves_blob_between_storages():
     asset = make_asset(visibility="PUBLIC")
     assert storages["media_public"].exists(asset.object_key)

@@ -8,7 +8,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -17,6 +17,7 @@ from apps.accounts.permissions import StaffModelPermissions
 
 from . import services
 from .models import MediaAsset
+from .parsers import SafeJSONParser
 from .serializers import (
     MediaAssetSerializer,
     MediaAssetUpdateSerializer,
@@ -24,13 +25,12 @@ from .serializers import (
     PublicMediaAssetSerializer,
 )
 
-APPROVE_PERMISSION = "media.approve_mediaasset"
 DOWNLOAD_PRIVATE_PERMISSION = "media.download_private_mediaasset"
 
 
 class Conflict(APIException):
     status_code = status.HTTP_409_CONFLICT
-    default_detail = "The resource is still referenced and cannot be deleted."
+    default_detail = "The resource is still referenced and cannot be changed or deleted."
     default_code = "conflict"
 
 
@@ -68,7 +68,7 @@ class MediaAssetViewSet(
     queryset = MediaAsset.objects.select_related("uploaded_by")
     serializer_class = MediaAssetSerializer
     permission_classes = [StaffModelPermissions]
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    parser_classes = [MultiPartParser, FormParser, SafeJSONParser]
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -93,21 +93,28 @@ class MediaAssetViewSet(
         asset = self.get_object()
         serializer = MediaAssetUpdateSerializer(asset, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        changes = dict(serializer.validated_data)
-        new_status = changes.get("authorization_status", asset.authorization_status)
-        if new_status != asset.authorization_status and not request.user.has_perm(
-            APPROVE_PERMISSION
-        ):
-            raise PermissionDenied("Changing the authorization status requires approval rights.")
+
+        def authorize(permissions: set[str]) -> None:
+            if not all(request.user.has_perm(perm) for perm in permissions):
+                raise PermissionDenied(
+                    "Approving, rejecting or publishing media requires approval rights."
+                )
+
         try:
-            asset = services.update_asset(asset, **changes)
+            asset = services.update_asset(
+                asset, authorize=authorize, **dict(serializer.validated_data)
+            )
         except DjangoValidationError as exc:
             raise as_drf_validation_error(exc) from exc
+        except services.AssetInUse as exc:
+            raise Conflict(str(exc)) from exc
         return Response(MediaAssetSerializer(asset).data)
 
     def perform_destroy(self, instance: MediaAsset) -> None:
         try:
             services.delete_asset(instance)
+        except services.AssetInUse as exc:
+            raise Conflict(str(exc)) from exc
         except ProtectedError as exc:
             raise Conflict() from exc
 
