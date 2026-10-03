@@ -15,14 +15,20 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsStaffUser, StaffModelPermissions
 
 from . import services
-from .models import Page, PageSection
+from .models import NavigationItem, NavigationMenu, Page, PageSection, SEOSettings, SiteSettings
 from .sections import LATEST_VERSIONS, SECTION_SCHEMAS
 from .serializers import (
+    NavigationItemSerializer,
+    NavigationMenuSerializer,
     PageSectionSerializer,
     PageSerializer,
+    PublicNavigationSerializer,
     PublicPageSerializer,
+    PublicSiteSettingsSerializer,
     SectionOrderSerializer,
     SectionSchemaSerializer,
+    SEOSettingsSerializer,
+    SiteSettingsSerializer,
 )
 
 PUBLISH_PERMISSION = "cms.publish_page"
@@ -185,3 +191,116 @@ class PublicPageView(generics.RetrieveAPIView[Page]):
 
     def get_queryset(self) -> QuerySet[Page]:
         return Page.objects.filter(status=Page.Status.PUBLISHED).select_related("og_image")
+
+
+MENU_PK_PARAMETER = OpenApiParameter("menu_pk", int, OpenApiParameter.PATH)
+
+
+@extend_schema_view(
+    list=extend_schema(operation_id="listCmsNavigationMenus"),
+    retrieve=extend_schema(operation_id="getCmsNavigationMenu"),
+    create=extend_schema(operation_id="createCmsNavigationMenu"),
+    partial_update=extend_schema(operation_id="updateCmsNavigationMenu"),
+    destroy=extend_schema(operation_id="deleteCmsNavigationMenu"),
+)
+class NavigationMenuViewSet(StaffCrudViewSet):
+    """Navigation menus (header, footer...) with their items."""
+
+    queryset = NavigationMenu.objects.prefetch_related("items")
+    serializer_class = NavigationMenuSerializer
+
+
+@extend_schema_view(
+    list=extend_schema(operation_id="listCmsNavigationItems"),
+    retrieve=extend_schema(operation_id="getCmsNavigationItem"),
+    create=extend_schema(operation_id="createCmsNavigationItem"),
+    partial_update=extend_schema(operation_id="updateCmsNavigationItem"),
+    destroy=extend_schema(operation_id="deleteCmsNavigationItem"),
+)
+@extend_schema(parameters=[MENU_PK_PARAMETER])
+class NavigationItemViewSet(StaffCrudViewSet):
+    """Items of one menu, ordered by `position`; `parent` allows one level of nesting."""
+
+    serializer_class = NavigationItemSerializer
+    pagination_class = None
+    menu: NavigationMenu
+
+    def get_queryset(self) -> QuerySet[NavigationItem]:
+        return NavigationItem.objects.filter(menu_id=int(self.kwargs.get("menu_pk", 0))).order_by(
+            "position", "id"
+        )
+
+    def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
+        super().initial(request, *args, **kwargs)  # authentication + permissions first
+        self.menu = get_object_or_404(NavigationMenu, pk=kwargs["menu_pk"])
+
+    def get_serializer_context(self) -> dict[str, Any]:
+        context = super().get_serializer_context()
+        if hasattr(self, "menu"):
+            context["menu"] = self.menu
+        return context
+
+    def perform_create(self, serializer: NavigationItemSerializer) -> None:  # type: ignore[override]
+        serializer.save(menu=self.menu)
+
+
+class SingletonSettingsView(generics.GenericAPIView[Any]):
+    """GET / PATCH of a singleton settings row (staff + view/change model permission)."""
+
+    permission_classes = [StaffModelPermissions]
+    parser_classes = [JSONParser]
+    pagination_class = None
+
+    def get_object(self) -> Any:
+        model = self.get_queryset().model
+        return model.load()
+
+    def get(self, request: Request) -> Response:
+        return Response(self.get_serializer(self.get_object()).data)
+
+    def patch(self, request: Request) -> Response:
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+@extend_schema_view(
+    get=extend_schema(operation_id="getCmsSiteSettings"),
+    patch=extend_schema(operation_id="updateCmsSiteSettings"),
+)
+class SiteSettingsView(SingletonSettingsView):
+    queryset = SiteSettings.objects.all()
+    serializer_class = SiteSettingsSerializer
+
+
+@extend_schema_view(
+    get=extend_schema(operation_id="getCmsSeoSettings"),
+    patch=extend_schema(operation_id="updateCmsSeoSettings"),
+)
+class SEOSettingsView(SingletonSettingsView):
+    queryset = SEOSettings.objects.all()
+    serializer_class = SEOSettingsSerializer
+
+
+class PublicNavigationView(APIView):
+    """Visible items of a menu whose targets are published pages or safe URLs."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(operation_id="getPublicNavigation", responses=PublicNavigationSerializer)
+    def get(self, request: Request, key: str) -> Response:
+        menu = get_object_or_404(NavigationMenu, key=key)
+        return Response(PublicNavigationSerializer(services.public_navigation(menu)).data)
+
+
+class PublicSiteSettingsView(APIView):
+    """Public company data and SEO defaults. Unconfirmed values are null."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(operation_id="getPublicSiteSettings", responses=PublicSiteSettingsSerializer)
+    def get(self, request: Request) -> Response:
+        return Response(PublicSiteSettingsSerializer(services.public_site_settings()).data)

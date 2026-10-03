@@ -1,7 +1,7 @@
 from typing import Any
 
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
 
@@ -108,3 +108,188 @@ class PageSection(models.Model):
     @staticmethod
     def latest_version(section_type: str) -> int:
         return LATEST_VERSIONS.get(section_type, 1)
+
+
+def validate_safe_url(value: str) -> None:
+    message = url_error(value)
+    if message:
+        raise ValidationError(message)
+
+
+validate_vat_number = RegexValidator(
+    r"^(IT)?\d{11}$", "Enter an 11-digit Italian VAT number (optionally prefixed by IT)."
+)
+validate_phone = RegexValidator(r"^\+?[0-9 ]{6,20}$", "Enter digits, spaces and optional +.")
+
+
+def _check_single_target(page: "Page | None", url: str, label_field: str) -> dict[str, str]:
+    if page is not None and url:
+        return {label_field: "Choose either a page or a URL, not both."}
+    if page is None and not url:
+        return {label_field: "A page or a URL is required."}
+    return {}
+
+
+class NavigationMenu(models.Model):
+    key = models.SlugField(max_length=50, unique=True, help_text="e.g. header, footer")
+    title = models.CharField(max_length=100, validators=[validate_plain_text])
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["key"]
+
+    def __str__(self) -> str:
+        return self.key
+
+
+class NavigationItem(models.Model):
+    """Menu entry pointing at a CMS page or a safe URL. One level of nesting."""
+
+    menu = models.ForeignKey(NavigationMenu, on_delete=models.CASCADE, related_name="items")
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.CASCADE, related_name="children"
+    )
+    label = models.CharField(max_length=80, validators=[validate_plain_text])
+    page = models.ForeignKey(
+        Page, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    url = models.CharField(max_length=500, blank=True, validators=[validate_safe_url])
+    position = models.PositiveIntegerField(default=0)
+    visible = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["menu", "position", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(models.Q(page__isnull=False) & models.Q(url=""))
+                | (models.Q(page__isnull=True) & ~models.Q(url="")),
+                name="cms_navigationitem_single_target",
+                violation_error_message="Choose exactly one target: a page or a URL.",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.menu.key}: {self.label}"
+
+    def clean(self) -> None:
+        errors = _check_single_target(self.page, self.url, "url")
+        if self.parent is not None:
+            if self.parent.menu_id != self.menu_id:
+                errors["parent"] = "The parent must belong to the same menu."
+            elif self.parent.parent_id is not None or (
+                self.pk is not None and self.parent.pk == self.pk
+            ):
+                errors["parent"] = "Only one level of nesting is supported."
+            elif self.pk is not None and self.children.exists():
+                errors["parent"] = "An item with children cannot become a child."
+        if errors:
+            raise ValidationError(errors)
+
+
+class SingletonModel(models.Model):
+    """Exactly one row (pk=1), created lazily by `load()`."""
+
+    SINGLETON_PK = 1
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.pk = self.SINGLETON_PK
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls) -> Any:
+        obj, _ = cls._default_manager.get_or_create(pk=cls.SINGLETON_PK)
+        return obj
+
+    @classmethod
+    def current(cls) -> Any:
+        """Read-only access for public endpoints: never writes, unsaved defaults if absent."""
+        return cls._default_manager.filter(pk=cls.SINGLETON_PK).first() or cls()
+
+
+class SiteSettings(SingletonModel):
+    """Company data shown on the public site.
+
+    Every field starts empty. Only values confirmed by the client Source of Truth may be
+    entered (legal name, brand, VAT, operational address, phone, certifications); e-mail,
+    opening hours, tagline etc. are DA DEFINIRE and must stay empty until confirmed.
+    """
+
+    legal_name = models.CharField(max_length=200, blank=True, validators=[validate_plain_text])
+    brand_name = models.CharField(max_length=100, blank=True, validators=[validate_plain_text])
+    vat_number = models.CharField(max_length=13, blank=True, validators=[validate_vat_number])
+    address = models.CharField(max_length=300, blank=True, validators=[validate_plain_text])
+    phone = models.CharField(max_length=20, blank=True, validators=[validate_phone])
+    email = models.EmailField(blank=True)
+    opening_hours = models.CharField(
+        max_length=300, blank=True, validators=[validate_multiline_plain_text]
+    )
+    tagline = models.CharField(max_length=200, blank=True, validators=[validate_plain_text])
+    certifications_text = models.CharField(
+        max_length=500, blank=True, validators=[validate_multiline_plain_text]
+    )
+    primary_cta_label = models.CharField(
+        max_length=40, blank=True, validators=[validate_plain_text]
+    )
+    primary_cta_page = models.ForeignKey(
+        Page, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    primary_cta_url = models.CharField(max_length=500, blank=True, validators=[validate_safe_url])
+    footer_text = models.CharField(
+        max_length=1000, blank=True, validators=[validate_multiline_plain_text]
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "site settings"
+        verbose_name_plural = "site settings"
+        constraints = [
+            models.CheckConstraint(condition=models.Q(id=1), name="cms_sitesettings_singleton")
+        ]
+
+    def __str__(self) -> str:
+        return "Site settings"
+
+    def clean(self) -> None:
+        has_target = self.primary_cta_page is not None or bool(self.primary_cta_url)
+        if self.primary_cta_label or has_target:
+            errors = _check_single_target(
+                self.primary_cta_page, self.primary_cta_url, "primary_cta_url"
+            )
+            if not self.primary_cta_label:
+                errors["primary_cta_label"] = "A label is required when a target is set."
+            if errors:
+                raise ValidationError(errors)
+
+
+class SEOSettings(SingletonModel):
+    """Site-wide SEO defaults; pages override them field by field."""
+
+    default_title = models.CharField(max_length=70, blank=True, validators=[validate_plain_text])
+    default_description = models.CharField(
+        max_length=300, blank=True, validators=[validate_multiline_plain_text]
+    )
+    default_og_image = models.ForeignKey(
+        MediaAsset, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    allow_indexing = models.BooleanField(
+        default=False,
+        help_text="Off until launch: public pages are served with noindex.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "SEO settings"
+        verbose_name_plural = "SEO settings"
+        constraints = [
+            models.CheckConstraint(condition=models.Q(id=1), name="cms_seosettings_singleton")
+        ]
+
+    def __str__(self) -> str:
+        return "SEO settings"
+
+    def clean(self) -> None:
+        validate_public_media(self.default_og_image, "default_og_image")

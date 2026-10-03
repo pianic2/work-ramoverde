@@ -138,6 +138,257 @@ paths:
               schema:
                 $ref: '#/components/schemas/MobileTokenResponse'
           description: ''
+  /api/v1/cms/navigation-menus:
+    get:
+      operationId: listCmsNavigationMenus
+      description: Navigation menus (header, footer...) with their items.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNavigationMenuList'
+          description: ''
+    post:
+      operationId: createCmsNavigationMenu
+      description: Navigation menus (header, footer...) with their items.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NavigationMenu'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationMenu'
+          description: ''
+  /api/v1/cms/navigation-menus/{menu_pk}/items:
+    get:
+      operationId: listCmsNavigationItems
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NavigationItem'
+          description: ''
+    post:
+      operationId: createCmsNavigationItem
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NavigationItem'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationItem'
+          description: ''
+  /api/v1/cms/navigation-menus/{menu_pk}/items/{id}:
+    get:
+      operationId: getCmsNavigationItem
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation item.
+        required: true
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationItem'
+          description: ''
+    patch:
+      operationId: updateCmsNavigationItem
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation item.
+        required: true
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNavigationItem'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationItem'
+          description: ''
+    delete:
+      operationId: deleteCmsNavigationItem
+      description: Items of one menu, ordered by `position`; `parent` allows one level
+        of nesting.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation item.
+        required: true
+      - in: path
+        name: menu_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cms/navigation-menus/{id}:
+    get:
+      operationId: getCmsNavigationMenu
+      description: Navigation menus (header, footer...) with their items.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation menu.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationMenu'
+          description: ''
+    patch:
+      operationId: updateCmsNavigationMenu
+      description: Navigation menus (header, footer...) with their items.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation menu.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNavigationMenu'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationMenu'
+          description: ''
+    delete:
+      operationId: deleteCmsNavigationMenu
+      description: Navigation menus (header, footer...) with their items.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this navigation menu.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/cms/pages:
     get:
       operationId: listCmsPages
@@ -443,6 +694,82 @@ paths:
                 items:
                   $ref: '#/components/schemas/SectionSchema'
           description: ''
+  /api/v1/cms/seo-settings:
+    get:
+      operationId: getCmsSeoSettings
+      description: GET / PATCH of a singleton settings row (staff + view/change model
+        permission).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SEOSettings'
+          description: ''
+    patch:
+      operationId: updateCmsSeoSettings
+      description: GET / PATCH of a singleton settings row (staff + view/change model
+        permission).
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSEOSettings'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SEOSettings'
+          description: ''
+  /api/v1/cms/site-settings:
+    get:
+      operationId: getCmsSiteSettings
+      description: GET / PATCH of a singleton settings row (staff + view/change model
+        permission).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteSettings'
+          description: ''
+    patch:
+      operationId: updateCmsSiteSettings
+      description: GET / PATCH of a singleton settings row (staff + view/change model
+        permission).
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSiteSettings'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteSettings'
+          description: ''
   /api/v1/health/live:
     get:
       operationId: getHealthLive
@@ -646,6 +973,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedPublicMediaAssetList'
           description: ''
+  /api/v1/public/navigation/{key}:
+    get:
+      operationId: getPublicNavigation
+      description: Visible items of a menu whose targets are published pages or safe
+        URLs.
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicNavigation'
+          description: ''
   /api/v1/public/pages/{slug}:
     get:
       operationId: getPublicPage
@@ -667,6 +1016,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicPage'
+          description: ''
+  /api/v1/public/site-settings:
+    get:
+      operationId: getPublicSiteSettings
+      description: Public company data and SEO defaults. Unconfirmed values are null.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSiteSettings'
           description: ''
   /api/v1/users/me:
     get:
@@ -849,6 +1213,68 @@ components:
       required:
       - access
       - refresh
+    NavigationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        parent:
+          type: integer
+          nullable: true
+        label:
+          type: string
+          maxLength: 80
+        page:
+          type: integer
+          nullable: true
+        url:
+          type: string
+          default: ''
+          maxLength: 500
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        visible:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - label
+      - updated_at
+    NavigationMenu:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          description: e.g. header, footer
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          maxLength: 100
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationItem'
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - items
+      - key
+      - title
+      - updated_at
     OriginEnum:
       enum:
       - STAFF_UPLOAD
@@ -970,6 +1396,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MediaAsset'
+    PaginatedNavigationMenuList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationMenu'
     PaginatedPageList:
       type: object
       required:
@@ -1042,6 +1491,58 @@ components:
             * `PENDING` - Pending review
             * `APPROVED` - Approved for publication
             * `REJECTED` - Rejected
+    PatchedNavigationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        parent:
+          type: integer
+          nullable: true
+        label:
+          type: string
+          maxLength: 80
+        page:
+          type: integer
+          nullable: true
+        url:
+          type: string
+          default: ''
+          maxLength: 500
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        visible:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedNavigationMenu:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          description: e.g. header, footer
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          maxLength: 100
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationItem'
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedPage:
       type: object
       properties:
@@ -1115,6 +1616,74 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedSEOSettings:
+      type: object
+      properties:
+        default_title:
+          type: string
+          maxLength: 70
+        default_description:
+          type: string
+          maxLength: 300
+        allow_indexing:
+          type: boolean
+          description: 'Off until launch: public pages are served with noindex.'
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        default_og_image:
+          type: integer
+          nullable: true
+    PatchedSiteSettings:
+      type: object
+      properties:
+        legal_name:
+          type: string
+          maxLength: 200
+        brand_name:
+          type: string
+          maxLength: 100
+        vat_number:
+          type: string
+          pattern: ^(IT)?\d{11}$
+          maxLength: 13
+        address:
+          type: string
+          maxLength: 300
+        phone:
+          type: string
+          pattern: ^\+?[0-9 ]{6,20}$
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        opening_hours:
+          type: string
+          maxLength: 300
+        tagline:
+          type: string
+          maxLength: 200
+        certifications_text:
+          type: string
+          maxLength: 500
+        primary_cta_label:
+          type: string
+          maxLength: 40
+        primary_cta_url:
+          type: string
+          maxLength: 500
+        footer_text:
+          type: string
+          maxLength: 1000
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        primary_cta_page:
+          type: integer
+          nullable: true
     PublicMedia:
       type: object
       properties:
@@ -1174,6 +1743,63 @@ components:
       - mime_type
       - url
       - width
+    PublicNavigation:
+      type: object
+      properties:
+        key:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicNavigationItem'
+      required:
+      - items
+      - key
+      - title
+    PublicNavigationItem:
+      type: object
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+          nullable: true
+          description: Safe URL target, if not a page.
+        page_slug:
+          type: string
+          nullable: true
+          description: Published CMS page target.
+          pattern: ^[-a-zA-Z0-9_]+$
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicNavigationLink'
+      required:
+      - children
+      - label
+      - page_slug
+      - url
+    PublicNavigationLink:
+      type: object
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+          nullable: true
+          description: Safe URL target, if not a page.
+        page_slug:
+          type: string
+          nullable: true
+          description: Published CMS page target.
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - label
+      - page_slug
+      - url
     PublicPage:
       type: object
       properties:
@@ -1244,6 +1870,101 @@ components:
       - noindex
       - og_image
       - title
+    PublicSeoDefaults:
+      type: object
+      properties:
+        default_title:
+          type: string
+          nullable: true
+        default_description:
+          type: string
+          nullable: true
+        default_og_image:
+          allOf:
+          - $ref: '#/components/schemas/PublicMedia'
+          nullable: true
+        allow_indexing:
+          type: boolean
+      required:
+      - allow_indexing
+      - default_description
+      - default_og_image
+      - default_title
+    PublicSiteSettings:
+      type: object
+      description: Unconfirmed (empty) values are null; never invented.
+      properties:
+        legal_name:
+          type: string
+          nullable: true
+        brand_name:
+          type: string
+          nullable: true
+        vat_number:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        opening_hours:
+          type: string
+          nullable: true
+        tagline:
+          type: string
+          nullable: true
+        certifications_text:
+          type: string
+          nullable: true
+        footer_text:
+          type: string
+          nullable: true
+        primary_cta:
+          allOf:
+          - $ref: '#/components/schemas/PublicNavigationLink'
+          nullable: true
+        seo:
+          $ref: '#/components/schemas/PublicSeoDefaults'
+      required:
+      - address
+      - brand_name
+      - certifications_text
+      - email
+      - footer_text
+      - legal_name
+      - opening_hours
+      - phone
+      - primary_cta
+      - seo
+      - tagline
+      - vat_number
+    SEOSettings:
+      type: object
+      properties:
+        default_title:
+          type: string
+          maxLength: 70
+        default_description:
+          type: string
+          maxLength: 300
+        allow_indexing:
+          type: boolean
+          description: 'Off until launch: public pages are served with noindex.'
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        default_og_image:
+          type: integer
+          nullable: true
+      required:
+      - updated_at
     SectionOrder:
       type: object
       properties:
@@ -1289,6 +2010,57 @@ components:
       required:
       - email
       - password
+    SiteSettings:
+      type: object
+      properties:
+        legal_name:
+          type: string
+          maxLength: 200
+        brand_name:
+          type: string
+          maxLength: 100
+        vat_number:
+          type: string
+          pattern: ^(IT)?\d{11}$
+          maxLength: 13
+        address:
+          type: string
+          maxLength: 300
+        phone:
+          type: string
+          pattern: ^\+?[0-9 ]{6,20}$
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        opening_hours:
+          type: string
+          maxLength: 300
+        tagline:
+          type: string
+          maxLength: 200
+        certifications_text:
+          type: string
+          maxLength: 500
+        primary_cta_label:
+          type: string
+          maxLength: 40
+        primary_cta_url:
+          type: string
+          maxLength: 500
+        footer_text:
+          type: string
+          maxLength: 1000
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        primary_cta_page:
+          type: integer
+          nullable: true
+      required:
+      - updated_at
     StatusEnum:
       enum:
       - DRAFT

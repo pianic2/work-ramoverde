@@ -6,7 +6,14 @@ from django.db import models
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from .models import Page, PageSection
+from .models import (
+    NavigationItem,
+    NavigationMenu,
+    Page,
+    PageSection,
+    SEOSettings,
+    SiteSettings,
+)
 from .sections import LATEST_VERSIONS
 from .services import page_seo, public_sections
 
@@ -143,3 +150,98 @@ class PublicPageSerializer(serializers.Serializer[Any]):
     @extend_schema_field(PublicSectionSerializer(many=True))
     def get_sections(self, page: Page) -> list[dict[str, Any]]:
         return public_sections(page)
+
+
+# --- navigation and settings (WR-20) ------------------------------------------------------
+
+
+class NavigationItemSerializer(serializers.ModelSerializer[NavigationItem]):
+    url = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+
+    class Meta:
+        model = NavigationItem
+        fields = ["id", "parent", "label", "page", "url", "position", "visible", "updated_at"]
+        read_only_fields = ["id", "updated_at"]
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if self.instance is not None:
+            candidate = copy.copy(self.instance)
+        else:
+            candidate = NavigationItem(menu=self.context["menu"])
+        for key, value in attrs.items():
+            setattr(candidate, key, value)
+        run_model_clean(candidate, exclude=["menu"])
+        return attrs
+
+
+class NavigationMenuSerializer(serializers.ModelSerializer[NavigationMenu]):
+    items = NavigationItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = NavigationMenu
+        fields = ["id", "key", "title", "items", "updated_at"]
+        read_only_fields = ["id", "items", "updated_at"]
+
+
+class _SingletonSerializer(serializers.ModelSerializer[Any]):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        assert self.instance is not None, "singleton serializers always update an instance"
+        candidate = copy.copy(self.instance)
+        for key, value in attrs.items():
+            setattr(candidate, key, value)
+        run_model_clean(candidate)
+        return attrs
+
+
+class SiteSettingsSerializer(_SingletonSerializer):
+    class Meta:
+        model = SiteSettings
+        exclude = ["id"]
+        read_only_fields = ["updated_at"]
+
+
+class SEOSettingsSerializer(_SingletonSerializer):
+    class Meta:
+        model = SEOSettings
+        exclude = ["id"]
+        read_only_fields = ["updated_at"]
+
+
+class PublicNavigationLinkSerializer(serializers.Serializer[Any]):
+    label = serializers.CharField()  # type: ignore[assignment]  # DRF Field.label clash
+    url = serializers.CharField(allow_null=True, help_text="Safe URL target, if not a page.")
+    page_slug = serializers.SlugField(allow_null=True, help_text="Published CMS page target.")
+
+
+class PublicNavigationItemSerializer(PublicNavigationLinkSerializer):
+    children = PublicNavigationLinkSerializer(many=True)
+
+
+class PublicNavigationSerializer(serializers.Serializer[Any]):
+    key = serializers.SlugField()
+    title = serializers.CharField()
+    items = PublicNavigationItemSerializer(many=True)
+
+
+class PublicSeoDefaultsSerializer(serializers.Serializer[Any]):
+    default_title = serializers.CharField(allow_null=True)
+    default_description = serializers.CharField(allow_null=True)
+    default_og_image = PublicMediaSerializer(allow_null=True)
+    allow_indexing = serializers.BooleanField()
+
+
+class PublicSiteSettingsSerializer(serializers.Serializer[Any]):
+    """Unconfirmed (empty) values are null; never invented."""
+
+    legal_name = serializers.CharField(allow_null=True)
+    brand_name = serializers.CharField(allow_null=True)
+    vat_number = serializers.CharField(allow_null=True)
+    address = serializers.CharField(allow_null=True)
+    phone = serializers.CharField(allow_null=True)
+    email = serializers.EmailField(allow_null=True)
+    opening_hours = serializers.CharField(allow_null=True)
+    tagline = serializers.CharField(allow_null=True)
+    certifications_text = serializers.CharField(allow_null=True)
+    footer_text = serializers.CharField(allow_null=True)
+    primary_cta = PublicNavigationLinkSerializer(allow_null=True)
+    seo = PublicSeoDefaultsSerializer()

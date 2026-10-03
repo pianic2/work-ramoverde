@@ -2,19 +2,30 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 from django.http import HttpRequest
 
-from .models import Page, PageSection
+from .models import (
+    NavigationItem,
+    NavigationMenu,
+    Page,
+    PageSection,
+    SEOSettings,
+    SiteSettings,
+)
 
 if TYPE_CHECKING:
     _PageAdmin = admin.ModelAdmin[Page]
+    _MenuAdmin = admin.ModelAdmin[NavigationMenu]
+    _SingletonAdmin = admin.ModelAdmin[Any]
     _SectionInline = admin.StackedInline[PageSection, Page]
+    _ItemInline = admin.TabularInline[NavigationItem, NavigationMenu]
 else:
-    _PageAdmin = admin.ModelAdmin
+    _PageAdmin = _MenuAdmin = _SingletonAdmin = admin.ModelAdmin
     _SectionInline = admin.StackedInline
+    _ItemInline = admin.TabularInline
 
 
 class PageSectionInline(_SectionInline):
@@ -39,3 +50,35 @@ class PageAdmin(_PageAdmin):
         if not request.user.has_perm("cms.publish_page"):
             readonly.append("status")
         return readonly
+
+
+class NavigationItemInline(_ItemInline):
+    model = NavigationItem
+    fk_name = "menu"
+    extra = 0
+    ordering = ["position", "id"]
+    fields = ["label", "page", "url", "parent", "position", "visible"]
+
+
+@admin.register(NavigationMenu)
+class NavigationMenuAdmin(_MenuAdmin):
+    list_display = ["key", "title", "updated_at"]
+    inlines = [NavigationItemInline]
+
+
+class SingletonAdmin(_SingletonAdmin):
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return not self.model._default_manager.exists() and super().has_add_permission(request)
+
+    def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        return False
+
+
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(SingletonAdmin):
+    raw_id_fields = ["primary_cta_page"]
+
+
+@admin.register(SEOSettings)
+class SEOSettingsAdmin(SingletonAdmin):
+    raw_id_fields = ["default_og_image"]

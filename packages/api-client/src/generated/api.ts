@@ -26,6 +26,7 @@ import type {
   GetHealthLive200,
   GetHealthReady200,
   GetHealthReady503,
+  ListCmsNavigationMenusParams,
   ListCmsPagesParams,
   ListMediaAssetsParams,
   ListPublicMediaAssetsParams,
@@ -35,18 +36,29 @@ import type {
   MobileLogout,
   MobileRefresh,
   MobileTokenResponse,
+  NavigationItem,
+  NavigationMenu,
   Page,
   PageSection,
   PaginatedMediaAssetList,
+  PaginatedNavigationMenuList,
   PaginatedPageList,
   PaginatedPublicMediaAssetList,
   PatchedMediaAssetUpdate,
+  PatchedNavigationItem,
+  PatchedNavigationMenu,
   PatchedPage,
   PatchedPageSection,
+  PatchedSEOSettings,
+  PatchedSiteSettings,
+  PublicNavigation,
   PublicPage,
+  PublicSiteSettings,
+  SEOSettings,
   SectionOrder,
   SectionSchema,
   SessionLogin,
+  SiteSettings,
   User,
 } from './model';
 
@@ -719,6 +731,1244 @@ export const usePostAuthTokenRefresh = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getPostAuthTokenRefreshMutationOptions(options), queryClient);
+};
+
+export type listCmsNavigationMenusResponse200 = {
+  data: PaginatedNavigationMenuList;
+  status: 200;
+};
+
+export type listCmsNavigationMenusResponseSuccess = listCmsNavigationMenusResponse200 & {
+  headers: Headers;
+};
+export type listCmsNavigationMenusResponse = listCmsNavigationMenusResponseSuccess;
+
+export const getListCmsNavigationMenusUrl = (params?: ListCmsNavigationMenusParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/cms/navigation-menus?${stringifiedParams}`
+    : `/api/v1/cms/navigation-menus`;
+};
+
+/**
+ * Navigation menus (header, footer...) with their items.
+ */
+export const listCmsNavigationMenus = async (
+  params?: ListCmsNavigationMenusParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<listCmsNavigationMenusResponse> => {
+  return customFetch<listCmsNavigationMenusResponse>(getListCmsNavigationMenusUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListCmsNavigationMenusQueryKey = (params?: ListCmsNavigationMenusParams) => {
+  return [`/api/v1/cms/navigation-menus`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCmsNavigationMenusQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCmsNavigationMenus>>,
+  TError = unknown,
+>(
+  params?: ListCmsNavigationMenusParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationMenus>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCmsNavigationMenusQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCmsNavigationMenus>>> = ({ signal }) =>
+    listCmsNavigationMenus(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCmsNavigationMenus>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListCmsNavigationMenusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCmsNavigationMenus>>
+>;
+export type ListCmsNavigationMenusQueryError = unknown;
+
+export function useListCmsNavigationMenus<
+  TData = Awaited<ReturnType<typeof listCmsNavigationMenus>>,
+  TError = unknown,
+>(
+  params: undefined | ListCmsNavigationMenusParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationMenus>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsNavigationMenus>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsNavigationMenus>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsNavigationMenus<
+  TData = Awaited<ReturnType<typeof listCmsNavigationMenus>>,
+  TError = unknown,
+>(
+  params?: ListCmsNavigationMenusParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationMenus>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsNavigationMenus>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsNavigationMenus>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsNavigationMenus<
+  TData = Awaited<ReturnType<typeof listCmsNavigationMenus>>,
+  TError = unknown,
+>(
+  params?: ListCmsNavigationMenusParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationMenus>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListCmsNavigationMenus<
+  TData = Awaited<ReturnType<typeof listCmsNavigationMenus>>,
+  TError = unknown,
+>(
+  params?: ListCmsNavigationMenusParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationMenus>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListCmsNavigationMenusQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createCmsNavigationMenuResponse201 = {
+  data: NavigationMenu;
+  status: 201;
+};
+
+export type createCmsNavigationMenuResponseSuccess = createCmsNavigationMenuResponse201 & {
+  headers: Headers;
+};
+export type createCmsNavigationMenuResponse = createCmsNavigationMenuResponseSuccess;
+
+export const getCreateCmsNavigationMenuUrl = () => {
+  return `/api/v1/cms/navigation-menus`;
+};
+
+/**
+ * Navigation menus (header, footer...) with their items.
+ */
+export const createCmsNavigationMenu = async (
+  navigationMenu: NonReadonly<NavigationMenu>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<createCmsNavigationMenuResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<createCmsNavigationMenuResponse>(getCreateCmsNavigationMenuUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(navigationMenu),
+  });
+};
+
+export const getCreateCmsNavigationMenuMutationKey = () => ['createCmsNavigationMenu'] as const;
+
+export const getCreateCmsNavigationMenuMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCmsNavigationMenu>>,
+    TError,
+    CreateCmsNavigationMenuMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCmsNavigationMenu>>,
+  TError,
+  CreateCmsNavigationMenuMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateCmsNavigationMenuMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCmsNavigationMenu>>,
+    CreateCmsNavigationMenuMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCmsNavigationMenu(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCmsNavigationMenuMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCmsNavigationMenu>>
+>;
+export type CreateCmsNavigationMenuMutationBody = NonReadonly<NavigationMenu>;
+export type CreateCmsNavigationMenuMutationError = unknown;
+export type CreateCmsNavigationMenuMutationVariables = { data: NonReadonly<NavigationMenu> };
+
+export const useCreateCmsNavigationMenu = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createCmsNavigationMenu>>,
+      TError,
+      CreateCmsNavigationMenuMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createCmsNavigationMenu>>,
+  TError,
+  CreateCmsNavigationMenuMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateCmsNavigationMenuMutationOptions(options), queryClient);
+};
+
+export type listCmsNavigationItemsResponse200 = {
+  data: NavigationItem[];
+  status: 200;
+};
+
+export type listCmsNavigationItemsResponseSuccess = listCmsNavigationItemsResponse200 & {
+  headers: Headers;
+};
+export type listCmsNavigationItemsResponse = listCmsNavigationItemsResponseSuccess;
+
+export const getListCmsNavigationItemsUrl = (menuPk: number) => {
+  return `/api/v1/cms/navigation-menus/${menuPk}/items`;
+};
+
+/**
+ * Items of one menu, ordered by `position`; `parent` allows one level of nesting.
+ */
+export const listCmsNavigationItems = async (
+  menuPk: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<listCmsNavigationItemsResponse> => {
+  return customFetch<listCmsNavigationItemsResponse>(getListCmsNavigationItemsUrl(menuPk), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListCmsNavigationItemsQueryKey = (menuPk: number) => {
+  return [`/api/v1/cms/navigation-menus/${menuPk}/items`] as const;
+};
+
+export const getListCmsNavigationItemsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCmsNavigationItems>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationItems>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCmsNavigationItemsQueryKey(menuPk);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCmsNavigationItems>>> = ({ signal }) =>
+    listCmsNavigationItems(menuPk, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: menuPk !== null && menuPk !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationItems>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListCmsNavigationItemsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCmsNavigationItems>>
+>;
+export type ListCmsNavigationItemsQueryError = unknown;
+
+export function useListCmsNavigationItems<
+  TData = Awaited<ReturnType<typeof listCmsNavigationItems>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationItems>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsNavigationItems>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsNavigationItems>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsNavigationItems<
+  TData = Awaited<ReturnType<typeof listCmsNavigationItems>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationItems>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCmsNavigationItems>>,
+          TError,
+          Awaited<ReturnType<typeof listCmsNavigationItems>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCmsNavigationItems<
+  TData = Awaited<ReturnType<typeof listCmsNavigationItems>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationItems>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListCmsNavigationItems<
+  TData = Awaited<ReturnType<typeof listCmsNavigationItems>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCmsNavigationItems>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListCmsNavigationItemsQueryOptions(menuPk, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createCmsNavigationItemResponse201 = {
+  data: NavigationItem;
+  status: 201;
+};
+
+export type createCmsNavigationItemResponseSuccess = createCmsNavigationItemResponse201 & {
+  headers: Headers;
+};
+export type createCmsNavigationItemResponse = createCmsNavigationItemResponseSuccess;
+
+export const getCreateCmsNavigationItemUrl = (menuPk: number) => {
+  return `/api/v1/cms/navigation-menus/${menuPk}/items`;
+};
+
+/**
+ * Items of one menu, ordered by `position`; `parent` allows one level of nesting.
+ */
+export const createCmsNavigationItem = async (
+  menuPk: number,
+  navigationItem: NonReadonly<NavigationItem>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<createCmsNavigationItemResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<createCmsNavigationItemResponse>(getCreateCmsNavigationItemUrl(menuPk), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(navigationItem),
+  });
+};
+
+export const getCreateCmsNavigationItemMutationKey = () => ['createCmsNavigationItem'] as const;
+
+export const getCreateCmsNavigationItemMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCmsNavigationItem>>,
+    TError,
+    CreateCmsNavigationItemMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCmsNavigationItem>>,
+  TError,
+  CreateCmsNavigationItemMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateCmsNavigationItemMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCmsNavigationItem>>,
+    CreateCmsNavigationItemMutationVariables
+  > = (props) => {
+    const { menuPk, data } = props ?? {};
+
+    return createCmsNavigationItem(menuPk, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCmsNavigationItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCmsNavigationItem>>
+>;
+export type CreateCmsNavigationItemMutationBody = NonReadonly<NavigationItem>;
+export type CreateCmsNavigationItemMutationError = unknown;
+export type CreateCmsNavigationItemMutationVariables = {
+  menuPk: number;
+  data: NonReadonly<NavigationItem>;
+};
+
+export const useCreateCmsNavigationItem = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createCmsNavigationItem>>,
+      TError,
+      CreateCmsNavigationItemMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createCmsNavigationItem>>,
+  TError,
+  CreateCmsNavigationItemMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateCmsNavigationItemMutationOptions(options), queryClient);
+};
+
+export type getCmsNavigationItemResponse200 = {
+  data: NavigationItem;
+  status: 200;
+};
+
+export type getCmsNavigationItemResponseSuccess = getCmsNavigationItemResponse200 & {
+  headers: Headers;
+};
+export type getCmsNavigationItemResponse = getCmsNavigationItemResponseSuccess;
+
+export const getGetCmsNavigationItemUrl = (menuPk: number, id: number) => {
+  return `/api/v1/cms/navigation-menus/${menuPk}/items/${id}`;
+};
+
+/**
+ * Items of one menu, ordered by `position`; `parent` allows one level of nesting.
+ */
+export const getCmsNavigationItem = async (
+  menuPk: number,
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getCmsNavigationItemResponse> => {
+  return customFetch<getCmsNavigationItemResponse>(getGetCmsNavigationItemUrl(menuPk, id), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetCmsNavigationItemQueryKey = (menuPk: number, id: number) => {
+  return [`/api/v1/cms/navigation-menus/${menuPk}/items/${id}`] as const;
+};
+
+export const getGetCmsNavigationItemQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCmsNavigationItem>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationItem>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCmsNavigationItemQueryKey(menuPk, id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCmsNavigationItem>>> = ({ signal }) =>
+    getCmsNavigationItem(menuPk, id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: menuPk !== null && menuPk !== undefined && id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationItem>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetCmsNavigationItemQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCmsNavigationItem>>
+>;
+export type GetCmsNavigationItemQueryError = unknown;
+
+export function useGetCmsNavigationItem<
+  TData = Awaited<ReturnType<typeof getCmsNavigationItem>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  id: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationItem>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsNavigationItem>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsNavigationItem>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsNavigationItem<
+  TData = Awaited<ReturnType<typeof getCmsNavigationItem>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationItem>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsNavigationItem>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsNavigationItem>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsNavigationItem<
+  TData = Awaited<ReturnType<typeof getCmsNavigationItem>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationItem>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetCmsNavigationItem<
+  TData = Awaited<ReturnType<typeof getCmsNavigationItem>>,
+  TError = unknown,
+>(
+  menuPk: number,
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationItem>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetCmsNavigationItemQueryOptions(menuPk, id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type updateCmsNavigationItemResponse200 = {
+  data: NavigationItem;
+  status: 200;
+};
+
+export type updateCmsNavigationItemResponseSuccess = updateCmsNavigationItemResponse200 & {
+  headers: Headers;
+};
+export type updateCmsNavigationItemResponse = updateCmsNavigationItemResponseSuccess;
+
+export const getUpdateCmsNavigationItemUrl = (menuPk: number, id: number) => {
+  return `/api/v1/cms/navigation-menus/${menuPk}/items/${id}`;
+};
+
+/**
+ * Items of one menu, ordered by `position`; `parent` allows one level of nesting.
+ */
+export const updateCmsNavigationItem = async (
+  menuPk: number,
+  id: number,
+  patchedNavigationItem?: NonReadonly<PatchedNavigationItem>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<updateCmsNavigationItemResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<updateCmsNavigationItemResponse>(getUpdateCmsNavigationItemUrl(menuPk, id), {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchedNavigationItem),
+  });
+};
+
+export const getUpdateCmsNavigationItemMutationKey = () => ['updateCmsNavigationItem'] as const;
+
+export const getUpdateCmsNavigationItemMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCmsNavigationItem>>,
+    TError,
+    UpdateCmsNavigationItemMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCmsNavigationItem>>,
+  TError,
+  UpdateCmsNavigationItemMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateCmsNavigationItemMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCmsNavigationItem>>,
+    UpdateCmsNavigationItemMutationVariables
+  > = (props) => {
+    const { menuPk, id, data } = props ?? {};
+
+    return updateCmsNavigationItem(menuPk, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCmsNavigationItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCmsNavigationItem>>
+>;
+export type UpdateCmsNavigationItemMutationBody = NonReadonly<PatchedNavigationItem> | undefined;
+export type UpdateCmsNavigationItemMutationError = unknown;
+export type UpdateCmsNavigationItemMutationVariables = {
+  menuPk: number;
+  id: number;
+  data?: NonReadonly<PatchedNavigationItem>;
+};
+
+export const useUpdateCmsNavigationItem = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateCmsNavigationItem>>,
+      TError,
+      UpdateCmsNavigationItemMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateCmsNavigationItem>>,
+  TError,
+  UpdateCmsNavigationItemMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateCmsNavigationItemMutationOptions(options), queryClient);
+};
+
+export type deleteCmsNavigationItemResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteCmsNavigationItemResponseSuccess = deleteCmsNavigationItemResponse204 & {
+  headers: Headers;
+};
+export type deleteCmsNavigationItemResponse = deleteCmsNavigationItemResponseSuccess;
+
+export const getDeleteCmsNavigationItemUrl = (menuPk: number, id: number) => {
+  return `/api/v1/cms/navigation-menus/${menuPk}/items/${id}`;
+};
+
+/**
+ * Items of one menu, ordered by `position`; `parent` allows one level of nesting.
+ */
+export const deleteCmsNavigationItem = async (
+  menuPk: number,
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<deleteCmsNavigationItemResponse> => {
+  return customFetch<deleteCmsNavigationItemResponse>(getDeleteCmsNavigationItemUrl(menuPk, id), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteCmsNavigationItemMutationKey = () => ['deleteCmsNavigationItem'] as const;
+
+export const getDeleteCmsNavigationItemMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCmsNavigationItem>>,
+    TError,
+    DeleteCmsNavigationItemMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCmsNavigationItem>>,
+  TError,
+  DeleteCmsNavigationItemMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteCmsNavigationItemMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCmsNavigationItem>>,
+    DeleteCmsNavigationItemMutationVariables
+  > = (props) => {
+    const { menuPk, id } = props ?? {};
+
+    return deleteCmsNavigationItem(menuPk, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCmsNavigationItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCmsNavigationItem>>
+>;
+
+export type DeleteCmsNavigationItemMutationError = unknown;
+export type DeleteCmsNavigationItemMutationVariables = { menuPk: number; id: number };
+
+export const useDeleteCmsNavigationItem = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteCmsNavigationItem>>,
+      TError,
+      DeleteCmsNavigationItemMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCmsNavigationItem>>,
+  TError,
+  DeleteCmsNavigationItemMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteCmsNavigationItemMutationOptions(options), queryClient);
+};
+
+export type getCmsNavigationMenuResponse200 = {
+  data: NavigationMenu;
+  status: 200;
+};
+
+export type getCmsNavigationMenuResponseSuccess = getCmsNavigationMenuResponse200 & {
+  headers: Headers;
+};
+export type getCmsNavigationMenuResponse = getCmsNavigationMenuResponseSuccess;
+
+export const getGetCmsNavigationMenuUrl = (id: number) => {
+  return `/api/v1/cms/navigation-menus/${id}`;
+};
+
+/**
+ * Navigation menus (header, footer...) with their items.
+ */
+export const getCmsNavigationMenu = async (
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getCmsNavigationMenuResponse> => {
+  return customFetch<getCmsNavigationMenuResponse>(getGetCmsNavigationMenuUrl(id), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetCmsNavigationMenuQueryKey = (id: number) => {
+  return [`/api/v1/cms/navigation-menus/${id}`] as const;
+};
+
+export const getGetCmsNavigationMenuQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCmsNavigationMenu>>,
+  TError = unknown,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationMenu>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCmsNavigationMenuQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCmsNavigationMenu>>> = ({ signal }) =>
+    getCmsNavigationMenu(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationMenu>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetCmsNavigationMenuQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCmsNavigationMenu>>
+>;
+export type GetCmsNavigationMenuQueryError = unknown;
+
+export function useGetCmsNavigationMenu<
+  TData = Awaited<ReturnType<typeof getCmsNavigationMenu>>,
+  TError = unknown,
+>(
+  id: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationMenu>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsNavigationMenu>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsNavigationMenu>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsNavigationMenu<
+  TData = Awaited<ReturnType<typeof getCmsNavigationMenu>>,
+  TError = unknown,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationMenu>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsNavigationMenu>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsNavigationMenu>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsNavigationMenu<
+  TData = Awaited<ReturnType<typeof getCmsNavigationMenu>>,
+  TError = unknown,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationMenu>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetCmsNavigationMenu<
+  TData = Awaited<ReturnType<typeof getCmsNavigationMenu>>,
+  TError = unknown,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsNavigationMenu>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetCmsNavigationMenuQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type updateCmsNavigationMenuResponse200 = {
+  data: NavigationMenu;
+  status: 200;
+};
+
+export type updateCmsNavigationMenuResponseSuccess = updateCmsNavigationMenuResponse200 & {
+  headers: Headers;
+};
+export type updateCmsNavigationMenuResponse = updateCmsNavigationMenuResponseSuccess;
+
+export const getUpdateCmsNavigationMenuUrl = (id: number) => {
+  return `/api/v1/cms/navigation-menus/${id}`;
+};
+
+/**
+ * Navigation menus (header, footer...) with their items.
+ */
+export const updateCmsNavigationMenu = async (
+  id: number,
+  patchedNavigationMenu?: NonReadonly<PatchedNavigationMenu>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<updateCmsNavigationMenuResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<updateCmsNavigationMenuResponse>(getUpdateCmsNavigationMenuUrl(id), {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchedNavigationMenu),
+  });
+};
+
+export const getUpdateCmsNavigationMenuMutationKey = () => ['updateCmsNavigationMenu'] as const;
+
+export const getUpdateCmsNavigationMenuMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCmsNavigationMenu>>,
+    TError,
+    UpdateCmsNavigationMenuMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCmsNavigationMenu>>,
+  TError,
+  UpdateCmsNavigationMenuMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateCmsNavigationMenuMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCmsNavigationMenu>>,
+    UpdateCmsNavigationMenuMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateCmsNavigationMenu(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCmsNavigationMenuMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCmsNavigationMenu>>
+>;
+export type UpdateCmsNavigationMenuMutationBody = NonReadonly<PatchedNavigationMenu> | undefined;
+export type UpdateCmsNavigationMenuMutationError = unknown;
+export type UpdateCmsNavigationMenuMutationVariables = {
+  id: number;
+  data?: NonReadonly<PatchedNavigationMenu>;
+};
+
+export const useUpdateCmsNavigationMenu = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateCmsNavigationMenu>>,
+      TError,
+      UpdateCmsNavigationMenuMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateCmsNavigationMenu>>,
+  TError,
+  UpdateCmsNavigationMenuMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateCmsNavigationMenuMutationOptions(options), queryClient);
+};
+
+export type deleteCmsNavigationMenuResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteCmsNavigationMenuResponseSuccess = deleteCmsNavigationMenuResponse204 & {
+  headers: Headers;
+};
+export type deleteCmsNavigationMenuResponse = deleteCmsNavigationMenuResponseSuccess;
+
+export const getDeleteCmsNavigationMenuUrl = (id: number) => {
+  return `/api/v1/cms/navigation-menus/${id}`;
+};
+
+/**
+ * Navigation menus (header, footer...) with their items.
+ */
+export const deleteCmsNavigationMenu = async (
+  id: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<deleteCmsNavigationMenuResponse> => {
+  return customFetch<deleteCmsNavigationMenuResponse>(getDeleteCmsNavigationMenuUrl(id), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteCmsNavigationMenuMutationKey = () => ['deleteCmsNavigationMenu'] as const;
+
+export const getDeleteCmsNavigationMenuMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCmsNavigationMenu>>,
+    TError,
+    DeleteCmsNavigationMenuMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCmsNavigationMenu>>,
+  TError,
+  DeleteCmsNavigationMenuMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteCmsNavigationMenuMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCmsNavigationMenu>>,
+    DeleteCmsNavigationMenuMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteCmsNavigationMenu(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCmsNavigationMenuMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCmsNavigationMenu>>
+>;
+
+export type DeleteCmsNavigationMenuMutationError = unknown;
+export type DeleteCmsNavigationMenuMutationVariables = { id: number };
+
+export const useDeleteCmsNavigationMenu = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteCmsNavigationMenu>>,
+      TError,
+      DeleteCmsNavigationMenuMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCmsNavigationMenu>>,
+  TError,
+  DeleteCmsNavigationMenuMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteCmsNavigationMenuMutationOptions(options), queryClient);
 };
 
 export type listCmsPagesResponse200 = {
@@ -2129,6 +3379,478 @@ export function useListCmsSectionSchemas<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export type getCmsSeoSettingsResponse200 = {
+  data: SEOSettings;
+  status: 200;
+};
+
+export type getCmsSeoSettingsResponseSuccess = getCmsSeoSettingsResponse200 & {
+  headers: Headers;
+};
+export type getCmsSeoSettingsResponse = getCmsSeoSettingsResponseSuccess;
+
+export const getGetCmsSeoSettingsUrl = () => {
+  return `/api/v1/cms/seo-settings`;
+};
+
+/**
+ * GET / PATCH of a singleton settings row (staff + view/change model permission).
+ */
+export const getCmsSeoSettings = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getCmsSeoSettingsResponse> => {
+  return customFetch<getCmsSeoSettingsResponse>(getGetCmsSeoSettingsUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetCmsSeoSettingsQueryKey = () => {
+  return [`/api/v1/cms/seo-settings`] as const;
+};
+
+export const getGetCmsSeoSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCmsSeoSettings>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSeoSettings>>, TError, TData>>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCmsSeoSettingsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCmsSeoSettings>>> = ({ signal }) =>
+    getCmsSeoSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCmsSeoSettings>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetCmsSeoSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCmsSeoSettings>>
+>;
+export type GetCmsSeoSettingsQueryError = unknown;
+
+export function useGetCmsSeoSettings<
+  TData = Awaited<ReturnType<typeof getCmsSeoSettings>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSeoSettings>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsSeoSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsSeoSettings>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsSeoSettings<
+  TData = Awaited<ReturnType<typeof getCmsSeoSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSeoSettings>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsSeoSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsSeoSettings>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsSeoSettings<
+  TData = Awaited<ReturnType<typeof getCmsSeoSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSeoSettings>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetCmsSeoSettings<
+  TData = Awaited<ReturnType<typeof getCmsSeoSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSeoSettings>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetCmsSeoSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type updateCmsSeoSettingsResponse200 = {
+  data: SEOSettings;
+  status: 200;
+};
+
+export type updateCmsSeoSettingsResponseSuccess = updateCmsSeoSettingsResponse200 & {
+  headers: Headers;
+};
+export type updateCmsSeoSettingsResponse = updateCmsSeoSettingsResponseSuccess;
+
+export const getUpdateCmsSeoSettingsUrl = () => {
+  return `/api/v1/cms/seo-settings`;
+};
+
+/**
+ * GET / PATCH of a singleton settings row (staff + view/change model permission).
+ */
+export const updateCmsSeoSettings = async (
+  patchedSEOSettings?: NonReadonly<PatchedSEOSettings>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<updateCmsSeoSettingsResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<updateCmsSeoSettingsResponse>(getUpdateCmsSeoSettingsUrl(), {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchedSEOSettings),
+  });
+};
+
+export const getUpdateCmsSeoSettingsMutationKey = () => ['updateCmsSeoSettings'] as const;
+
+export const getUpdateCmsSeoSettingsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCmsSeoSettings>>,
+    TError,
+    UpdateCmsSeoSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCmsSeoSettings>>,
+  TError,
+  UpdateCmsSeoSettingsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateCmsSeoSettingsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCmsSeoSettings>>,
+    UpdateCmsSeoSettingsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateCmsSeoSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCmsSeoSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCmsSeoSettings>>
+>;
+export type UpdateCmsSeoSettingsMutationBody = NonReadonly<PatchedSEOSettings> | undefined;
+export type UpdateCmsSeoSettingsMutationError = unknown;
+export type UpdateCmsSeoSettingsMutationVariables = { data?: NonReadonly<PatchedSEOSettings> };
+
+export const useUpdateCmsSeoSettings = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateCmsSeoSettings>>,
+      TError,
+      UpdateCmsSeoSettingsMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateCmsSeoSettings>>,
+  TError,
+  UpdateCmsSeoSettingsMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateCmsSeoSettingsMutationOptions(options), queryClient);
+};
+
+export type getCmsSiteSettingsResponse200 = {
+  data: SiteSettings;
+  status: 200;
+};
+
+export type getCmsSiteSettingsResponseSuccess = getCmsSiteSettingsResponse200 & {
+  headers: Headers;
+};
+export type getCmsSiteSettingsResponse = getCmsSiteSettingsResponseSuccess;
+
+export const getGetCmsSiteSettingsUrl = () => {
+  return `/api/v1/cms/site-settings`;
+};
+
+/**
+ * GET / PATCH of a singleton settings row (staff + view/change model permission).
+ */
+export const getCmsSiteSettings = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getCmsSiteSettingsResponse> => {
+  return customFetch<getCmsSiteSettingsResponse>(getGetCmsSiteSettingsUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetCmsSiteSettingsQueryKey = () => {
+  return [`/api/v1/cms/site-settings`] as const;
+};
+
+export const getGetCmsSiteSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCmsSiteSettings>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSiteSettings>>, TError, TData>>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCmsSiteSettingsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCmsSiteSettings>>> = ({ signal }) =>
+    getCmsSiteSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCmsSiteSettings>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetCmsSiteSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCmsSiteSettings>>
+>;
+export type GetCmsSiteSettingsQueryError = unknown;
+
+export function useGetCmsSiteSettings<
+  TData = Awaited<ReturnType<typeof getCmsSiteSettings>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSiteSettings>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsSiteSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsSiteSettings>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsSiteSettings<
+  TData = Awaited<ReturnType<typeof getCmsSiteSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCmsSiteSettings>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCmsSiteSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getCmsSiteSettings>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCmsSiteSettings<
+  TData = Awaited<ReturnType<typeof getCmsSiteSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSiteSettings>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetCmsSiteSettings<
+  TData = Awaited<ReturnType<typeof getCmsSiteSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCmsSiteSettings>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetCmsSiteSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type updateCmsSiteSettingsResponse200 = {
+  data: SiteSettings;
+  status: 200;
+};
+
+export type updateCmsSiteSettingsResponseSuccess = updateCmsSiteSettingsResponse200 & {
+  headers: Headers;
+};
+export type updateCmsSiteSettingsResponse = updateCmsSiteSettingsResponseSuccess;
+
+export const getUpdateCmsSiteSettingsUrl = () => {
+  return `/api/v1/cms/site-settings`;
+};
+
+/**
+ * GET / PATCH of a singleton settings row (staff + view/change model permission).
+ */
+export const updateCmsSiteSettings = async (
+  patchedSiteSettings?: NonReadonly<PatchedSiteSettings>,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<updateCmsSiteSettingsResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<updateCmsSiteSettingsResponse>(getUpdateCmsSiteSettingsUrl(), {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchedSiteSettings),
+  });
+};
+
+export const getUpdateCmsSiteSettingsMutationKey = () => ['updateCmsSiteSettings'] as const;
+
+export const getUpdateCmsSiteSettingsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCmsSiteSettings>>,
+    TError,
+    UpdateCmsSiteSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCmsSiteSettings>>,
+  TError,
+  UpdateCmsSiteSettingsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateCmsSiteSettingsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCmsSiteSettings>>,
+    UpdateCmsSiteSettingsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateCmsSiteSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCmsSiteSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCmsSiteSettings>>
+>;
+export type UpdateCmsSiteSettingsMutationBody = NonReadonly<PatchedSiteSettings> | undefined;
+export type UpdateCmsSiteSettingsMutationError = unknown;
+export type UpdateCmsSiteSettingsMutationVariables = { data?: NonReadonly<PatchedSiteSettings> };
+
+export const useUpdateCmsSiteSettings = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateCmsSiteSettings>>,
+      TError,
+      UpdateCmsSiteSettingsMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateCmsSiteSettings>>,
+  TError,
+  UpdateCmsSiteSettingsMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateCmsSiteSettingsMutationOptions(options), queryClient);
+};
+
 export type getHealthLiveResponse200 = {
   data: GetHealthLive200;
   status: 200;
@@ -3248,6 +4970,149 @@ export function useListPublicMediaAssets<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export type getPublicNavigationResponse200 = {
+  data: PublicNavigation;
+  status: 200;
+};
+
+export type getPublicNavigationResponseSuccess = getPublicNavigationResponse200 & {
+  headers: Headers;
+};
+export type getPublicNavigationResponse = getPublicNavigationResponseSuccess;
+
+export const getGetPublicNavigationUrl = (key: string) => {
+  return `/api/v1/public/navigation/${key}`;
+};
+
+/**
+ * Visible items of a menu whose targets are published pages or safe URLs.
+ */
+export const getPublicNavigation = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getPublicNavigationResponse> => {
+  return customFetch<getPublicNavigationResponse>(getGetPublicNavigationUrl(key), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetPublicNavigationQueryKey = (key: string) => {
+  return [`/api/v1/public/navigation/${key}`] as const;
+};
+
+export const getGetPublicNavigationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPublicNavigation>>,
+  TError = unknown,
+>(
+  key: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicNavigation>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPublicNavigationQueryKey(key);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicNavigation>>> = ({ signal }) =>
+    getPublicNavigation(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getPublicNavigation>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetPublicNavigationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPublicNavigation>>
+>;
+export type GetPublicNavigationQueryError = unknown;
+
+export function useGetPublicNavigation<
+  TData = Awaited<ReturnType<typeof getPublicNavigation>>,
+  TError = unknown,
+>(
+  key: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicNavigation>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicNavigation>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicNavigation>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetPublicNavigation<
+  TData = Awaited<ReturnType<typeof getPublicNavigation>>,
+  TError = unknown,
+>(
+  key: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicNavigation>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicNavigation>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicNavigation>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetPublicNavigation<
+  TData = Awaited<ReturnType<typeof getPublicNavigation>>,
+  TError = unknown,
+>(
+  key: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicNavigation>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetPublicNavigation<
+  TData = Awaited<ReturnType<typeof getPublicNavigation>>,
+  TError = unknown,
+>(
+  key: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicNavigation>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetPublicNavigationQueryOptions(key, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export type getPublicPageResponse200 = {
   data: PublicPage;
   status: 200;
@@ -3371,6 +5236,138 @@ export function useGetPublicPage<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetPublicPageQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type getPublicSiteSettingsResponse200 = {
+  data: PublicSiteSettings;
+  status: 200;
+};
+
+export type getPublicSiteSettingsResponseSuccess = getPublicSiteSettingsResponse200 & {
+  headers: Headers;
+};
+export type getPublicSiteSettingsResponse = getPublicSiteSettingsResponseSuccess;
+
+export const getGetPublicSiteSettingsUrl = () => {
+  return `/api/v1/public/site-settings`;
+};
+
+/**
+ * Public company data and SEO defaults. Unconfirmed values are null.
+ */
+export const getPublicSiteSettings = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<getPublicSiteSettingsResponse> => {
+  return customFetch<getPublicSiteSettingsResponse>(getGetPublicSiteSettingsUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetPublicSiteSettingsQueryKey = () => {
+  return [`/api/v1/public/site-settings`] as const;
+};
+
+export const getGetPublicSiteSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPublicSiteSettings>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof getPublicSiteSettings>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPublicSiteSettingsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicSiteSettings>>> = ({ signal }) =>
+    getPublicSiteSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicSiteSettings>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetPublicSiteSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPublicSiteSettings>>
+>;
+export type GetPublicSiteSettingsQueryError = unknown;
+
+export function useGetPublicSiteSettings<
+  TData = Awaited<ReturnType<typeof getPublicSiteSettings>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicSiteSettings>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicSiteSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicSiteSettings>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetPublicSiteSettings<
+  TData = Awaited<ReturnType<typeof getPublicSiteSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicSiteSettings>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicSiteSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicSiteSettings>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetPublicSiteSettings<
+  TData = Awaited<ReturnType<typeof getPublicSiteSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicSiteSettings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetPublicSiteSettings<
+  TData = Awaited<ReturnType<typeof getPublicSiteSettings>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPublicSiteSettings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetPublicSiteSettingsQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

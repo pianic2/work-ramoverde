@@ -63,6 +63,43 @@ Evolving a schema: add `(type, n+1)` to `_SCHEMAS`. Existing rows keep validatin
 
 `content` is typed as a free-form object in OpenAPI; its shape is described at runtime by `listCmsSectionSchemas`.
 
+## Navigation, site settings and SEO (WR-20)
+
+- `NavigationMenu`: `key` (unique slug, e.g. `header`, `footer`), `title`.
+- `NavigationItem`: `menu`, optional `parent` (**one level** of nesting, same menu; checked in `clean()`), `label` (plain text), exactly one target — `page` (FK, `PROTECT`: a page used by a menu cannot be deleted, API answers 409) **or** `url` (same safe-URL policy as sections) — enforced by `clean()` and a DB `CheckConstraint`; `position`, `visible`.
+- `SiteSettings` (singleton, `pk=1`, DB check constraint): `legal_name`, `brand_name`, `vat_number` (11 digits, optional `IT`), `address`, `phone`, `email`, `opening_hours`, `tagline`, `certifications_text`, `primary_cta_label` + `primary_cta_page` **or** `primary_cta_url`, `footer_text`.
+- `SEOSettings` (singleton): `default_title`, `default_description`, `default_og_image` (PUBLIC media, `PROTECT`), `allow_indexing` (default **false**: pages are `noindex` until launch is decided).
+
+### Unconfirmed client data stays empty
+
+Every `SiteSettings` field starts blank and **nothing is seeded** (no data migration). Public responses return blank values as `null`. Only facts confirmed by the client Source of Truth may be entered by staff: legal name "RAMO VERDE SRL", brand "RamoVerde", VAT "01637570522", operational address "Località San Marziale 11/13, Colle di Val d'Elsa", phone "05771607653", certifications "ISO 9001", "SOA V CATEGORIA". E-mail, domain, socials, opening hours, founders and slogan are **DA DEFINIRE** and must stay empty. Socials and founders are deliberately not modelled yet.
+
+### Public behavior
+
+- `GET /public/navigation/{key}`: visible items whose target is a `PUBLISHED` page (returned as `page_slug`) or a safe URL (`url`); hidden or unpublished parents hide their children; ordered by `position`. Internal fields (ids, visibility, timestamps) are not exposed.
+- `GET /public/site-settings`: company fields (`null` when empty), `primary_cta` (`null` unless it has a label and a public target) and `seo` defaults (og image only if PUBLIC+APPROVED).
+- Public page SEO = page values first, then defaults: `title` (seo_title → title), `description` (seo_description → default_description), `og_image` (page → default; only PUBLIC+APPROVED), `noindex` = page.noindex OR NOT allow_indexing, `canonical_url`.
+- Public reads never write (singletons read with `current()`, which returns unsaved defaults when absent). No caching anywhere, so edits show up on the next request (tested).
+
+### API
+
+| Method & path | operationId | Authorization |
+| --- | --- | --- |
+| `GET/POST /api/v1/cms/navigation-menus`, `GET/PATCH/DELETE .../{id}` | `listCmsNavigationMenus`, `createCmsNavigationMenu`, `getCmsNavigationMenu`, `updateCmsNavigationMenu`, `deleteCmsNavigationMenu` | `cms.*_navigationmenu` |
+| `GET/POST /api/v1/cms/navigation-menus/{menu_pk}/items`, `GET/PATCH/DELETE .../{id}` | `listCmsNavigationItems`, `createCmsNavigationItem`, `getCmsNavigationItem`, `updateCmsNavigationItem`, `deleteCmsNavigationItem` | `cms.*_navigationitem` |
+| `GET/PATCH /api/v1/cms/site-settings` | `getCmsSiteSettings`, `updateCmsSiteSettings` | `cms.view_sitesettings` / `cms.change_sitesettings` |
+| `GET/PATCH /api/v1/cms/seo-settings` | `getCmsSeoSettings`, `updateCmsSeoSettings` | `cms.view_seosettings` / `cms.change_seosettings` |
+| `GET /api/v1/public/navigation/{key}` | `getPublicNavigation` | anonymous |
+| `GET /api/v1/public/site-settings` | `getPublicSiteSettings` | anonymous |
+
+Navigation items are reordered by PATCHing `position` (no bulk reorder endpoint yet).
+
 ## Permission codenames (for RBAC role mapping)
 
-Default Django permissions for every model (`view_`, `add_`, `change_`, `delete_`): `page`, `pagesection`. Custom: `cms.publish_page` (publish / unpublish / archive).
+Default Django permissions for every model (`view_`, `add_`, `change_`, `delete_`): `page`, `pagesection`, `navigationmenu`, `navigationitem`, `sitesettings`, `seosettings`. Custom: `cms.publish_page` (publish / unpublish / archive). Staff endpoints use `apps.accounts.permissions.StaffModelPermissions` (staff + model permission, view permission required for reads); the section schema catalogue uses `IsStaffUser`.
+
+## Known limits
+
+- No revisions/preview of unpublished edits on published pages; no audit events yet (WR-18 `audit` not available).
+- `services`/`projects`/`certifications` ids in sections are not resolved or existence-checked until those modules exist.
+- OpenAPI types section `content` as a free-form object.
